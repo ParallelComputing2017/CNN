@@ -5,8 +5,8 @@
 #include <fstream>
 #include <algorithm>
 
-#include "../Example_MNIST/byteswap.h"
 #include "../CNN/cnn.h"
+#include "byteswap.h"
 
 using namespace std;
 

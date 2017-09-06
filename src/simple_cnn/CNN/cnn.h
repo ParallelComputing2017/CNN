@@ -1,11 +1,11 @@
 #pragma once
-#include "tensor_t.h"
-#include "optimization_method.h"
-#include "fc_layer.h"
-#include "pool_layer_t.h"
-#include "relu_layer_t.h"
 #include "conv_layer_t.h"
 #include "dropout_layer_t.h"
+#include "fc_layer.h"
+#include "optimization_method.h"
+#include "pool_layer_t.h"
+#include "relu_layer_t.h"
+#include "tensor_t.h"
 
 static void calc_grads( layer_t* layer, tensor_t<float>& grad_next_layer )
 {

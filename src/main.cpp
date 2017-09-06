@@ -8,64 +8,73 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <chrono>
+#include <boost/timer/timer.hpp>
 
 #include <iostream>
 #include <fstream>
 
-typedef std::chrono::high_resolution_clock Clock;
-typedef std::chrono::milliseconds ms;
-typedef std::chrono::duration<float> fsec;
-
 using namespace std;
+using namespace boost::timer;
 
-#include "pi/pi.hpp"
 #include "NeuralNetwork/NeuralNetwork.hpp"
 
-#include "../lib/simple_cnn/Example_MNIST/example.h"
+#include "simple_cnn/Example_MNIST/example.h"
 
 void writeCSV(string program, int threads, float runningTime);
+void printLog(string mode, cpu_timer timer, double result);
 
 int main(int argc, char *argv[]) {
 
 	int threads = 4;
 	string self(argv[0]);
-	string program = "nn";
+	string mode = "all";
 
 	if (argc != 3) { // argc should be 3 for correct execution
-		printf("Usage: Posix <program_name> <num_threads> \n");
-		printf("\t num_threads = 0 for sequential mode \n");
-
+		printf("Usage: Posix <mode_name> <num_threads>\n");
+		printf("\tModes: all, posix, openmp, single \n");
 	} else {
-		program = argv[1];
+		mode = argv[1];
 		threads = atoi(argv[2]);
 	}
 
-	auto t1 = Clock::now();
+	cpu_timer timer;
 
 	printf("Using %i threads \n", threads);
 
-	if (program.compare("pi") == 0) {
-		if (threads == 0) {
-			printf("Sequential Pi: %f \n", Pi::sequential());
-		} else {
-			printf("Parallel Posix Pi: %f \n", Pi::posix(threads));
+	bool all = (mode.compare("all") == 0);
 
-			printf("Parallel OpenMP Pi: %f \n", Pi::openMP(threads));
-		}
-	} else {
+	if (mode.compare("posix") == 0 || all) {
 
-		printf("Neural Net: %i \n", mainExample());
+		timer.start();
+		timer.stop();
+
+		printLog("Posix", timer, 0);
 	}
+	if (mode.compare("openmp") == 0 || all) {
 
-	// Timer
-	auto t2 = Clock::now();
-	fsec fs = t2 - t1;
+		timer.start();
+		timer.stop();
 
-	writeCSV(program, threads, fs.count());
+		printLog("OpenMP", timer, 0);
+
+	}
+	if (mode.compare("single") == 0) {
+
+		timer.start();
+		double pi = mainExample();
+		timer.stop();
+
+		printLog("Single", timer, pi);
+	}
 
 	return 0;
 
+}
+
+void printLog(string mode, cpu_timer timer, double result) {
+
+	printf("%s\t time: %s\t result: %f \n", mode.c_str(),
+			timer.format(3, "%ws").c_str(), result);
 }
 
 void writeCSV(string program, int threads, float seconds_runningTime) {
@@ -81,4 +90,7 @@ void writeCSV(string program, int threads, float seconds_runningTime) {
 
 	myfile.close();
 }
+
+
+
 

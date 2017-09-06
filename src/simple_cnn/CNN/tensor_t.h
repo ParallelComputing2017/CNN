@@ -1,8 +1,8 @@
 #pragma once
-#include "point_t.h"
 #include <cassert>
 #include <vector>
 #include <string.h>
+#include "point_t.h"
 
 template<typename T>
 struct tensor_t

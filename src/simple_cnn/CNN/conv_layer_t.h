@@ -1,5 +1,8 @@
 #pragma once
+#include <math.h>
+
 #include "layer_t.h"
+#include "optimization_method.h"
 
 #pragma pack(push, 1)
 struct conv_layer_t {
