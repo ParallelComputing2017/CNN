@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -146,7 +148,6 @@ vector<layer_t*> getExampleLayers2(vector<case_t> cases) {
 }
 
 int mainExample() {
-	printf("simple_cnn Example 1 \n");
 
 	vector<case_t> cases = read_test_cases();
 
@@ -159,7 +160,9 @@ int mainExample() {
 	float amse = 0;
 	int ic = 0;
 
-	for (long ep = 0; ep < 100000;) {
+	printf("Training cases: %i \n", cases.size());
+
+	for (long ep = 0; ep < cases.size();) {
 
 		for (case_t& t : cases) {
 			float xerr = train(layers, t.data, t.out);
@@ -178,6 +181,8 @@ int mainExample() {
 	// TEST
 
 	uint8_t * data = read_file("data/test.ppm");
+
+	int digit = -1;
 
 	if (data) {
 		uint8_t * usable = data;
@@ -204,12 +209,21 @@ int mainExample() {
 
 		forward(layers, image);
 		tensor_t<float>& out = layers.back()->out;
+
+		float maxProbability = 0.0;
+
+
 		for (int i = 0; i < 10; i++) {
-			printf("[%i] %f\n", i, out(i, 0, 0) * 100.0f);
+			float probability = out(i, 0, 0) * 100.0f;
+			if (probability > maxProbability) {
+				digit = i;
+				maxProbability = probability;
+			}
+			printf("[%i] %f\n", i, probability);
 		}
 
 		delete[] data;
 	}
 
-	return 0;
+	return digit;
 }

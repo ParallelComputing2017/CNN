@@ -21,13 +21,13 @@ using namespace boost::timer;
 #include "simple_cnn/Example_MNIST/example.h"
 
 void writeCSV(string program, int threads, float runningTime);
-void printLog(string mode, cpu_timer timer, double result);
+void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
 
 	int threads = 4;
 	string self(argv[0]);
-	string mode = "all";
+	string mode = "single";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: Posix <mode_name> <num_threads>\n");
@@ -61,19 +61,19 @@ int main(int argc, char *argv[]) {
 	if (mode.compare("single") == 0) {
 
 		timer.start();
-		double pi = mainExample();
+		int digit = mainExample();
 		timer.stop();
 
-		printLog("Single", timer, pi);
+		printLog("Single", timer, digit);
 	}
 
 	return 0;
 
 }
 
-void printLog(string mode, cpu_timer timer, double result) {
+void printLog(string mode, cpu_timer timer, int result) {
 
-	printf("%s\t time: %s\t result: %f \n", mode.c_str(),
+	printf("%s\t time: %s\t result: %i \n", mode.c_str(),
 			timer.format(3, "%ws").c_str(), result);
 }
 
