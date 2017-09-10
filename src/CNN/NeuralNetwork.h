@@ -7,16 +7,17 @@
 #include <fstream>
 #include <algorithm>
 
-#include "../CNN/cnn.h"
 #include "byteswap.h"
+#include "cnn.h"
 
 using namespace std;
 
 float train(vector<layer_t*>& layers, tensor_t<float>& data,
 		tensor_t<float>& expected) {
 	for (int i = 0; i < layers.size(); i++) {
-		if (i == 0)
+		if (i == 0) {
 			activate(layers[i], data);
+		}
 		else
 			activate(layers[i], layers[i - 1]->out);
 	}

@@ -3,8 +3,8 @@
 #include <float.h>
 #include <string.h>
 
-#include "layer_t.h"
 #include "gradient_t.h"
+#include "layer_t.h"
 #include "optimization_method.h"
 
 #pragma pack(push, 1)
