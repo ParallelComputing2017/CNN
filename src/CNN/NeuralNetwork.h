@@ -7,10 +7,18 @@
 #include <fstream>
 #include <algorithm>
 
+#include <omp.h>
+
 #include "byteswap.h"
 #include "cnn.h"
 
 using namespace std;
+
+#pragma pack(push, 1)
+struct RGB {
+	uint8_t r, g, b;
+};
+#pragma pack(pop)
 
 float train(vector<layer_t*>& layers, tensor_t<float>& data,
 		tensor_t<float>& expected) {
@@ -191,12 +199,6 @@ int mainExample() {
 		while (*(uint32_t*) usable != 0x0A353532)
 			usable++;
 
-#pragma pack(push, 1)
-		struct RGB {
-			uint8_t r, g, b;
-		};
-#pragma pack(pop)
-
 		RGB * rgb = (RGB*) usable;
 
 		tensor_t<float> image(28, 28, 1);
@@ -213,6 +215,106 @@ int mainExample() {
 
 		float maxProbability = 0.0;
 
+
+		for (int i = 0; i < 10; i++) {
+			float probability = out(i, 0, 0) * 100.0f;
+			if (probability > maxProbability) {
+				digit = i;
+				maxProbability = probability;
+			}
+			printf("[%i] %f\n", i, probability);
+		}
+
+		delete[] data;
+	}
+
+	return digit;
+}
+
+int openMP(int numThreads) {
+
+	vector<case_t> cases = read_test_cases();
+
+	vector<layer_t*> layers;
+
+	layers = getExampleLayers1(cases);
+
+	//layers = getExampleLayers2(cases);
+
+	float amse = 0;
+	int ic = 0;
+
+	printf("Training cases: %i \n", cases.size());
+
+	vector<layer_t*> slaves[numThreads];
+
+	for (int t = 0; t < numThreads; t++) {
+		slaves[t] = getExampleLayers1(cases);
+	}
+
+#pragma omp parallel num_threads(numThreads)
+	{
+		int threadId = omp_get_thread_num();
+
+		int batchSize = cases.size() / numThreads;
+		int batchStart = batchSize * threadId;
+		int batchEnd = batchStart + batchSize - 1;
+
+		printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
+				threadId, batchSize, batchStart, batchEnd);
+
+		vector<layer_t*> layers = slaves[threadId];
+
+		for (long ep = 0; ep < batchSize;) {
+
+			for (int i = batchStart; i < batchEnd; i++) {
+				case_t& t = cases.at(i);
+				float xerr = train(layers, t.data, t.out);
+				amse += xerr;
+
+				ep++;
+				ic++;
+
+				if (ep % 1000 == 0) {
+					printf("thread: %i, ep: %i, i: %i  \n", threadId, ep, i);
+
+					cout << " err=" << amse / ic << endl;
+				}
+			}
+			break;
+		}
+	}
+	// end:
+
+	layers = slaves[0];
+
+	// TEST
+
+	uint8_t * data = read_file("data/test.ppm");
+
+	int digit = -1;
+
+	if (data) {
+		uint8_t * usable = data;
+
+		while (*(uint32_t*) usable != 0x0A353532)
+			usable++;
+
+		RGB * rgb = (RGB*) usable;
+
+		tensor_t<float> image(28, 28, 1);
+		for (int i = 0; i < 28; i++) {
+			for (int j = 0; j < 28; j++) {
+				RGB rgb_ij = rgb[i * 28 + j];
+				image(j, i, 0) = (((float) rgb_ij.r + rgb_ij.g + rgb_ij.b)
+						/ (3.0f * 255.f));
+			}
+		}
+
+		forward(layers, image);
+		tensor_t<float>& out = layers.back()->out;
+
+		float maxProbability = 0.0;
 
 		for (int i = 0; i < 10; i++) {
 			float probability = out(i, 0, 0) * 100.0f;

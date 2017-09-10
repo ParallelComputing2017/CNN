@@ -25,9 +25,9 @@ void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
 
-	int threads = 4;
+	int threads = 3;
 	string self(argv[0]);
-	string mode = "single";
+	string mode = "openmp";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: Posix <mode_name> <num_threads>\n");
@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
 	if (mode.compare("openmp") == 0 || all) {
 
 		timer.start();
+		int digit = openMP(threads);
 		timer.stop();
 
 		printLog("OpenMP", timer, 0);
