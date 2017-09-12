@@ -235,9 +235,9 @@ int openMP(int numThreads) {
 
 	vector<case_t> cases = read_test_cases();
 
-	vector<layer_t*> layers;
+	vector<layer_t*> master;
 
-	layers = getExampleLayers1(cases);
+	master = getExampleLayers1(cases);
 
 	//layers = getExampleLayers2(cases);
 
@@ -275,7 +275,7 @@ int openMP(int numThreads) {
 				ep++;
 				ic++;
 
-				if (ep % 1000 == 0) {
+				if (ep % 2000 == 0) {
 					printf("thread: %i,\t ep: %i,\t i: %i,\t err: %f \n",
 							threadId,
 							ep, i, amse / ic);
@@ -287,11 +287,50 @@ int openMP(int numThreads) {
 	// end:
 
 	// Join slaves
-	layers = slaves[0];
 
-	for (vector<layer_t*> slave : slaves) {
-		// TODO
+	for (int l = 0; l < master.size(); l++) {
+		layer_t* masterLayer = master.at(l);
+
+		switch (masterLayer->type) {
+		case layer_type::conv:
+			((conv_layer_t*) masterLayer);
+			break;
+		case layer_type::relu:
+			((relu_layer_t*) masterLayer);
+			break;
+		case layer_type::fc: {
+			tensor_t<float> weights = ((fc_layer_t*) masterLayer)->weights;
+			for (vector<layer_t*> slave : slaves) {
+				layer_t* slaveLayer = slave[l];
+				if (slaveLayer->type != layer_type::fc) {
+					printf("ERROR Layer type");
+				}
+				weights = weights + ((fc_layer_t*) slaveLayer)->weights;
+			}
+			weights = weights / ((float) sizeof(slaves) / sizeof(slaves[0]));
+			// TODO remove
+			printf("new weights %i, sizeof(slaves): %f \n", weights.size,
+					((float) sizeof(slaves) / sizeof(slaves[0])));
+			print_tensor(weights);
+
+			((fc_layer_t*) masterLayer)->setWeights(weights);
+
+			print_tensor(((fc_layer_t*) masterLayer)->weights);
+			break;
+		}
+		case layer_type::pool:
+
+			((pool_layer_t*) masterLayer);
+			break;
+		case layer_type::dropout_layer:
+			((dropout_layer_t*) masterLayer);
+			break;
+		default:
+			assert(false);
+			break;
+		}
 	}
+
 
 	// TEST
 
@@ -316,8 +355,8 @@ int openMP(int numThreads) {
 			}
 		}
 
-		forward(layers, image);
-		tensor_t<float>& out = layers.back()->out;
+		forward(master, image);
+		tensor_t<float>& out = master.back()->out;
 
 		float maxProbability = 0.0;
 

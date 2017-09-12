@@ -46,6 +46,12 @@ struct tensor_t
 			clone.data[i] -= other.data[i];
 		return clone;
 	}
+	tensor_t<T> operator/(float divisor) {
+		tensor_t<T> clone(*this);
+		for (int i = 0; i < clone.size.x * clone.size.y * clone.size.z; i++)
+			clone.data[i] = clone.data[i] / divisor;
+		return clone;
+	}
 
 	T& operator()( int _x, int _y, int _z )
 	{

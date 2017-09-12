@@ -120,5 +120,9 @@ struct fc_layer_t
 					}
 		}
 	}
+
+	void setWeights(tensor_t<float> newWeights) {
+		weights = newWeights;
+	}
 };
 #pragma pack(pop)
