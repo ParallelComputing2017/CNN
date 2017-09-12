@@ -285,10 +285,12 @@ int openMP(int numThreads) {
 		}
 	}
 	// end:
+	master = slaves[0];
 
 	// Join slaves
 
 	for (int l = 0; l < master.size(); l++) {
+
 		layer_t* masterLayer = master.at(l);
 
 		switch (masterLayer->type) {
@@ -299,7 +301,11 @@ int openMP(int numThreads) {
 			((relu_layer_t*) masterLayer);
 			break;
 		case layer_type::fc: {
+			// TODO remove
+			printf("*** Layer %i \n", l);
+
 			tensor_t<float> weights = ((fc_layer_t*) masterLayer)->weights;
+
 			for (vector<layer_t*> slave : slaves) {
 				layer_t* slaveLayer = slave[l];
 				if (slaveLayer->type != layer_type::fc) {
@@ -308,6 +314,7 @@ int openMP(int numThreads) {
 				weights = weights + ((fc_layer_t*) slaveLayer)->weights;
 			}
 			weights = weights / ((float) sizeof(slaves) / sizeof(slaves[0]));
+
 			// TODO remove
 			printf("new weights %i, sizeof(slaves): %f \n", weights.size,
 					((float) sizeof(slaves) / sizeof(slaves[0])));
@@ -331,6 +338,8 @@ int openMP(int numThreads) {
 		}
 	}
 
+	// TODO remove
+	printf("*** END OF TRAINING *** \n");
 
 	// TEST
 
