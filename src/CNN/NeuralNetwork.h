@@ -241,9 +241,6 @@ int openMP(int numThreads) {
 
 	//layers = getExampleLayers2(cases);
 
-	float amse = 0;
-	int ic = 0;
-
 	printf("Training cases: %i \n", cases.size());
 
 	vector<layer_t*> slaves[numThreads];
@@ -265,6 +262,9 @@ int openMP(int numThreads) {
 
 		vector<layer_t*> layers = slaves[threadId];
 
+		float amse = 0;
+		int ic = 0;
+
 		for (long ep = 0; ep < batchSize;) {
 
 			for (int i = batchStart; i < batchEnd; i++) {
@@ -276,9 +276,9 @@ int openMP(int numThreads) {
 				ic++;
 
 				if (ep % 1000 == 0) {
-					printf("thread: %i, ep: %i, i: %i  \n", threadId, ep, i);
-
-					cout << " err=" << amse / ic << endl;
+					printf("thread: %i,\t ep: %i,\t i: %i,\t err: %f \n",
+							threadId,
+							ep, i, amse / ic);
 				}
 			}
 			break;
@@ -286,7 +286,12 @@ int openMP(int numThreads) {
 	}
 	// end:
 
+	// Join slaves
 	layers = slaves[0];
+
+	for (vector<layer_t*> slave : slaves) {
+		// TODO
+	}
 
 	// TEST
 

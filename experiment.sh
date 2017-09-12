@@ -14,6 +14,5 @@ for t in {1..16}
 do
 	threads=$t
 	eval "$cnn $mode $threads"
-	#time -p $cnn
 	printf "\n"
 done
