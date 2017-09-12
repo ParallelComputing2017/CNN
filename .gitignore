@@ -1,6 +1,3 @@
-# Build folders
-/Debug/
-
 # Data folder
 /data/mnist
 
@@ -37,3 +34,6 @@
 *.out
 *.app
 
+# Build folders
+/Debug/
+/Release/
