@@ -41,6 +41,10 @@ struct tensor_t
 
 	tensor_t<T> operator-( tensor_t<T>& other )
 	{
+		assert(
+				size.x == other.size.x && size.y == other.size.y
+						&& size.z == other.size.z);
+
 		tensor_t<T> clone( *this );
 		for ( int i = 0; i < other.size.x * other.size.y * other.size.z; i++ )
 			clone.data[i] -= other.data[i];
@@ -88,19 +92,15 @@ struct tensor_t
 	}
 };
 
-static void print_tensor( tensor_t<float>& data )
-{
+static void print_tensor(tensor_t<float>& data) {
 	int mx = data.size.x;
 	int my = data.size.y;
 	int mz = data.size.z;
 
-	for ( int z = 0; z < mz; z++ )
-	{
+	for (int z = 0; z < mz; z++) {
 		printf( "[Dim%d]\n", z );
-		for ( int y = 0; y < my; y++ )
-		{
-			for ( int x = 0; x < mx; x++ )
-			{
+		for (int y = 0; y < my; y++) {
+			for (int x = 0; x < mx; x++) {
 				printf( "%.2f \t", (float)data.get( x, y, z ) );
 			}
 			printf( "\n" );

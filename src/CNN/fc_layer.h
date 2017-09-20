@@ -124,5 +124,8 @@ struct fc_layer_t
 	void setWeights(tensor_t<float> newWeights) {
 		weights = newWeights;
 	}
+	void updateWeights(tensor_t<float> newWeights) {
+		weights = (weights + newWeights) / 2;
+	}
 };
 #pragma pack(pop)
