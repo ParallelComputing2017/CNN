@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		int digit = openMP(threads);
 		timer.stop();
 
-		printLog("OpenMP", timer, 0);
+		printLog("OpenMP", timer, digit);
 
 	}
 	if (mode.compare("single") == 0) {
