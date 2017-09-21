@@ -31,11 +31,12 @@ struct tensor_t
 		this->size = other.size;
 	}
 
-	tensor_t<T> operator+( tensor_t<T>& other )
-	{
+	tensor_t<T> operator+(tensor_t<T>& other) {
 		tensor_t<T> clone( *this );
-		for ( int i = 0; i < other.size.x * other.size.y * other.size.z; i++ )
+		for (int i = 0; i < other.size.x * other.size.y * other.size.z; i++) {
 			clone.data[i] += other.data[i];
+		}
+
 		return clone;
 	}
 
@@ -52,8 +53,9 @@ struct tensor_t
 	}
 	tensor_t<T> operator/(float divisor) {
 		tensor_t<T> clone(*this);
-		for (int i = 0; i < clone.size.x * clone.size.y * clone.size.z; i++)
+		for (int i = 0; i < clone.size.x * clone.size.y * clone.size.z; i++) {
 			clone.data[i] = clone.data[i] / divisor;
+		}
 		return clone;
 	}
 
