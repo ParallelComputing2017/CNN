@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
 	if (mode.compare("posix") == 0 || all) {
 
 		timer.start();
+		posix(threads);
 		timer.stop();
 
 		printLog("Posix", timer, 0);

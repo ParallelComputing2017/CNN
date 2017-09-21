@@ -60,6 +60,49 @@ vector<case_t> read_test_cases() {
 	return cases;
 }
 
+int singleTest(vector<layer_t*> master) {
+	uint8_t * data = read_file("data/test.ppm");
+
+	int digit = -1;
+
+	if (data) {
+		uint8_t * usable = data;
+
+		while (*(uint32_t*) usable != 0x0A353532)
+			usable++;
+
+		RGB * rgb = (RGB*) usable;
+
+		tensor_t<float> image(28, 28, 1);
+		for (int i = 0; i < 28; i++) {
+			for (int j = 0; j < 28; j++) {
+				RGB rgb_ij = rgb[i * 28 + j];
+				image(j, i, 0) = (((float) rgb_ij.r + rgb_ij.g + rgb_ij.b)
+						/ (3.0f * 255.f));
+			}
+		}
+
+		forward(master, image);
+		tensor_t<float>& out = master.back()->out;
+
+		float maxProbability = 0.0;
+
+		for (int i = 0; i < 10; i++) {
+			float probability = out(i, 0, 0) * 100.0f;
+			if (probability > maxProbability) {
+				digit = i;
+				maxProbability = probability;
+			}
+			printf("[%i] %f\n", i, probability);
+		}
+
+		delete[] data;
+	}
+
+	return digit;
+}
+
+
 int mainExample() {
 
 	vector<case_t> cases = read_test_cases();
@@ -93,46 +136,7 @@ int mainExample() {
 
 	// TEST
 
-	uint8_t * data = read_file("data/test.ppm");
-
-	int digit = -1;
-
-	if (data) {
-		uint8_t * usable = data;
-
-		while (*(uint32_t*) usable != 0x0A353532)
-			usable++;
-
-		RGB * rgb = (RGB*) usable;
-
-		tensor_t<float> image(28, 28, 1);
-		for (int i = 0; i < 28; i++) {
-			for (int j = 0; j < 28; j++) {
-				RGB rgb_ij = rgb[i * 28 + j];
-				image(j, i, 0) = (((float) rgb_ij.r + rgb_ij.g + rgb_ij.b)
-						/ (3.0f * 255.f));
-			}
-		}
-
-		forward(layers, image);
-		tensor_t<float>& out = layers.back()->out;
-
-		float maxProbability = 0.0;
-
-
-		for (int i = 0; i < 10; i++) {
-			float probability = out(i, 0, 0) * 100.0f;
-			if (probability > maxProbability) {
-				digit = i;
-				maxProbability = probability;
-			}
-			printf("[%i] %f\n", i, probability);
-		}
-
-		delete[] data;
-	}
-
-	return digit;
+	return singleTest(layers);
 }
 
 int openMP(int numThreads) {
@@ -181,14 +185,15 @@ int openMP(int numThreads) {
 
 				if (ep % 4000 == 0) {
 					printf("thread: %i,\t ep: %i,\t i: %i,\t err: %f \n",
-							threadId,
-							ep, i, amse / ic);
+							threadId, ep, i, amse / ic);
 				}
 			}
 			break;
 		}
 	}
 	// end:
+
+	// warm the model
 	master = slaves[0];
 
 	// Join slaves
@@ -217,10 +222,9 @@ int openMP(int numThreads) {
 				}
 				fc_layer_t* fcSlaveLayer = (fc_layer_t*) (slaveLayer);
 
-
 				fcMasterLayer->updateWeights(fcSlaveLayer->weights);
 			}
-		
+
 			// TODO remove
 			printf("sizeof(slaves): %f \n",
 					((float) sizeof(slaves) / sizeof(slaves[0])));
@@ -245,45 +249,7 @@ int openMP(int numThreads) {
 
 	// TEST
 
-	uint8_t * data = read_file("data/test.ppm");
-
-	int digit = -1;
-
-	if (data) {
-		uint8_t * usable = data;
-
-		while (*(uint32_t*) usable != 0x0A353532)
-			usable++;
-
-		RGB * rgb = (RGB*) usable;
-
-		tensor_t<float> image(28, 28, 1);
-		for (int i = 0; i < 28; i++) {
-			for (int j = 0; j < 28; j++) {
-				RGB rgb_ij = rgb[i * 28 + j];
-				image(j, i, 0) = (((float) rgb_ij.r + rgb_ij.g + rgb_ij.b)
-						/ (3.0f * 255.f));
-			}
-		}
-
-		forward(master, image);
-		tensor_t<float>& out = master.back()->out;
-
-		float maxProbability = 0.0;
-
-		for (int i = 0; i < 10; i++) {
-			float probability = out(i, 0, 0) * 100.0f;
-			if (probability > maxProbability) {
-				digit = i;
-				maxProbability = probability;
-			}
-			printf("[%i] %f\n", i, probability);
-		}
-
-		delete[] data;
-	}
-
-	return digit;
+	return singleTest(master);
 }
 
 int posix(int numThreads) {
@@ -341,101 +307,12 @@ int posix(int numThreads) {
 	// end:
 	master = slaves[0];
 
-	// Join slaves
-	/*
-	 for (int l = 0; l < master.size(); l++) {
 
-	 layer_t* masterLayer = master.at(l);
-
-	 switch (masterLayer->type) {
-	 case layer_type::conv:
-	 ((conv_layer_t*) masterLayer);
-	 break;
-	 case layer_type::relu:
-	 ((relu_layer_t*) masterLayer);
-	 break;
-	 case layer_type::fc: {
-	 // TODO remove
-	 printf("*** Layer %i \n", l);
-
-	 tensor_t<float> weights = ((fc_layer_t*) masterLayer)->weights;
-
-	 print_tensor(weights);
-
-	 for (vector<layer_t*> slave : slaves) {
-	 layer_t* slaveLayer = slave[l];
-	 if (slaveLayer->type != layer_type::fc) {
-	 printf("ERROR Layer type");
-	 }
-	 weights = weights + ((fc_layer_t*) slaveLayer)->weights;
-	 }
-	 weights = weights / ((float) sizeof(slaves) / sizeof(slaves[0]));
-
-	 // TODO remove
-	 printf("new weights %i, sizeof(slaves): %f \n", weights.size,
-	 ((float) sizeof(slaves) / sizeof(slaves[0])));
-
-	 //((fc_layer_t*) masterLayer)->setWeights(weights);
-
-	 print_tensor(weights);
-	 break;
-	 }
-	 case layer_type::pool:
-
-	 ((pool_layer_t*) masterLayer);
-	 break;
-	 case layer_type::dropout_layer:
-	 ((dropout_layer_t*) masterLayer);
-	 break;
-	 default:
-	 assert(false);
-	 break;
-	 }
-	 }
-	 */
-	// TODO remove
+// TODO remove
 	printf("*** END OF TRAINING *** \n");
 
-	// TEST
+	return singleTest(master);
 
-	uint8_t * data = read_file("data/test.ppm");
-
-	int digit = -1;
-
-	if (data) {
-		uint8_t * usable = data;
-
-		while (*(uint32_t*) usable != 0x0A353532)
-			usable++;
-
-		RGB * rgb = (RGB*) usable;
-
-		tensor_t<float> image(28, 28, 1);
-		for (int i = 0; i < 28; i++) {
-			for (int j = 0; j < 28; j++) {
-				RGB rgb_ij = rgb[i * 28 + j];
-				image(j, i, 0) = (((float) rgb_ij.r + rgb_ij.g + rgb_ij.b)
-						/ (3.0f * 255.f));
-			}
-		}
-
-		forward(master, image);
-		tensor_t<float>& out = master.back()->out;
-
-		float maxProbability = 0.0;
-
-		for (int i = 0; i < 10; i++) {
-			float probability = out(i, 0, 0) * 100.0f;
-			if (probability > maxProbability) {
-				digit = i;
-				maxProbability = probability;
-			}
-			printf("[%i] %f\n", i, probability);
-		}
-
-		delete[] data;
-	}
-
-	return digit;
 }
+
 

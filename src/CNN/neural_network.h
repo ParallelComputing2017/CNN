@@ -7,8 +7,6 @@
 #include <fstream>
 #include <algorithm>
 
-#include <omp.h>
-
 #include "byteswap.h"
 #include "cnn.h"
 
@@ -22,7 +20,7 @@ struct RGB {
 
 float train(vector<layer_t*>& layers, tensor_t<float>& data,
 		tensor_t<float>& expected) {
-	for (int i = 0; i < layers.size(); i++) {
+	for (unsigned i = 0; i < layers.size(); i++) {
 		if (i == 0) {
 			activate(layers[i], data);
 		}
