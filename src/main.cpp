@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
 	int threads = 3;
 	string self(argv[0]);
-	string mode = "openmp";
+	string mode = "posix";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: Posix <mode_name> <num_threads>\n");
@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
 
 	cpu_timer timer;
 
+	printf("Running mode: %s \n", mode.c_str());
 	printf("Using %i threads \n", threads);
 
 	bool all = (mode.compare("all") == 0);
