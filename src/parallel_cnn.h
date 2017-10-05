@@ -11,7 +11,7 @@
 #include <omp.h>
 
 #include "CNN/neural_network.h"
-#include "mnist_parser.h"
+#include "mnist.h"
 
 using namespace std;
 
@@ -42,7 +42,7 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 
 int sequential() {
 
-	vector<case_t> cases = read_test_cases();
+	vector<case_t> cases = read_training_cases();
 
 	vector<layer_t*> layers = getExampleLayers1(cases[0].data.size);
 
@@ -110,7 +110,7 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 
 int openMP(int numThreads) {
 
-	vector<case_t> cases = read_test_cases();
+	vector<case_t> cases = read_training_cases();
 
 	vector<layer_t*> master;
 
@@ -183,7 +183,7 @@ void *training(void *threadarg) {
 
 int posix(int numThreads) {
 
-	vector<case_t> cases = read_test_cases();
+	vector<case_t> cases = read_training_cases();
 
 	vector<layer_t*> master;
 

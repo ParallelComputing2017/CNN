@@ -20,11 +20,11 @@ uint8_t* read_file(const char* szFile) {
 	return buffer;
 }
 
-vector<case_t> read_test_cases() {
+vector<case_t> read_cases(string imagesFile, string labelsFile) {
 	vector<case_t> cases;
 
-	uint8_t* train_image = read_file("data/mnist/train-images.idx3-ubyte");
-	uint8_t* train_labels = read_file("data/mnist/train-labels.idx1-ubyte");
+	uint8_t* train_image = read_file(imagesFile.c_str());
+	uint8_t* train_labels = read_file(labelsFile.c_str());
 
 	uint32_t case_count = byteswap_uint32(*(uint32_t*) (train_image + 4));
 
@@ -45,6 +45,15 @@ vector<case_t> read_test_cases() {
 	}
 	delete[] train_image;
 	delete[] train_labels;
+
+	return cases;
+}
+
+vector<case_t> read_training_cases() {
+
+	string trainImages = "data/mnist/train-images.idx3-ubyte";
+	string trainLabels = "data/mnist/train-labels.idx1-ubyte";
+	vector<case_t> cases = read_cases( trainImages,  trainLabels);
 
 	return cases;
 }
