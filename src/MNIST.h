@@ -134,56 +134,19 @@ int sequential() {
 
 	vector<layer_t*> layers = getExampleLayers1(cases[0].data.size);
 
-	layers = training(cases, 0, cases.size()-1, layers);
+	layers = training(cases, 0, cases.size() - 1, layers);
 
 	// TEST
 	return singleTest(layers);
 }
 
-int openMP(int numThreads) {
-
-	vector<case_t> cases = read_test_cases();
-
-	vector<layer_t*> master;
-
-	master = getExampleLayers1(cases[0].data.size);
-
-	//layers = getExampleLayers2(cases);
-
-	printf("Training cases: %lu \n", cases.size());
-
-	vector<vector<layer_t*>> slaves;
-
-	for (int t = 0; t < numThreads; t++) {
-		slaves.push_back(getExampleLayers1(cases[0].data.size));
-	}
-
-#pragma omp parallel num_threads(numThreads)
-	{
-		int threadId = omp_get_thread_num();
-
-		int batchSize = cases.size() / numThreads;
-		int batchStart = batchSize * threadId;
-		int batchEnd = batchStart + batchSize - 1;
-
-		printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
-				threadId, batchSize, batchStart, batchEnd);
-
-		vector<layer_t*> layers = slaves[threadId];
-
-		layers = training(cases, batchStart, batchEnd, layers);
-
-	}
-	// end:
-
-	// warm the model
-	master = getExampleLayers1(cases[0].data.size);
-
-	printf("*** init master *** \n");
-	singleTest(master);
+/*
+ * Join the slaves models with the master
+ * */
+vector<layer_t*> joinSlaves(vector<layer_t*> master,
+		vector<vector<layer_t*>> slaves) {
 
 	// Join slaves
-
 	for (int layer = 0; layer < master.size(); layer++) {
 
 		layer_t* masterLayer = master.at(layer);
@@ -229,6 +192,54 @@ int openMP(int numThreads) {
 			break;
 		}
 	}
+
+	return master;
+}
+
+int openMP(int numThreads) {
+
+	vector<case_t> cases = read_test_cases();
+
+	vector<layer_t*> master;
+
+	master = getExampleLayers1(cases[0].data.size);
+
+	//layers = getExampleLayers2(cases);
+
+	printf("Training cases: %lu \n", cases.size());
+
+	vector<vector<layer_t*>> slaves;
+
+	for (int t = 0; t < numThreads; t++) {
+		slaves.push_back(getExampleLayers1(cases[0].data.size));
+	}
+
+#pragma omp parallel num_threads(numThreads)
+	{
+		int threadId = omp_get_thread_num();
+
+		int batchSize = cases.size() / numThreads;
+		int batchStart = batchSize * threadId;
+		int batchEnd = batchStart + batchSize - 1;
+
+		printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
+				threadId, batchSize, batchStart, batchEnd);
+
+		vector<layer_t*> layers = slaves[threadId];
+
+		layers = training(cases, batchStart, batchEnd, layers);
+
+	}
+	// end:
+
+	// warm the model
+	master = getExampleLayers1(cases[0].data.size);
+
+	printf("*** init master *** \n");
+	singleTest(master);
+
+	// Join slaves
+	master = joinSlaves(master, slaves);
 
 	// TODO remove
 	printf("*** END OF TRAINING *** \n");
@@ -298,53 +309,7 @@ int posix(int numThreads) {
 	// warm the model
 	master = slaves[0];
 
-	// Join slaves
-
-	for (int layer = 0; layer < master.size(); layer++) {
-
-		layer_t* masterLayer = master.at(layer);
-
-		switch (masterLayer->type) {
-		case layer_type::conv:
-			((conv_layer_t*) masterLayer);
-			break;
-		case layer_type::relu:
-			((relu_layer_t*) masterLayer);
-			break;
-		case layer_type::fc: {
-			// TODO remove
-			printf("*** Layer %i \n", layer);
-
-			fc_layer_t* fcMasterLayer = (fc_layer_t*) (masterLayer);
-
-			for (vector<layer_t*> slave : slaves) {
-				layer_t* slaveLayer = slave[layer];
-				if (slaveLayer->type != layer_type::fc) {
-					printf("ERROR Layer type");
-				}
-				fc_layer_t* fcSlaveLayer = (fc_layer_t*) (slaveLayer);
-
-				fcMasterLayer->updateWeights(fcSlaveLayer->weights);
-			}
-
-			// TODO remove
-			printf("sizeof(slaves): %f \n",
-					((float) sizeof(slaves) / sizeof(slaves[0])));
-
-			break;
-		}
-		case layer_type::pool:
-
-			((pool_layer_t*) masterLayer);
-			break;
-		case layer_type::dropout_layer:
-			((dropout_layer_t*) masterLayer);
-			break;
-		default:
-			assert(false);
-			break;
-		}
-	}
+	master = joinSlaves(master, slaves);
 
 // TODO remove
 	printf("*** END OF TRAINING *** \n");
