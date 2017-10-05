@@ -11,7 +11,7 @@
 #include <omp.h>
 
 
-#include "neural_network.h"
+#include "CNN/neural_network.h"
 
 using namespace std;
 
@@ -179,10 +179,10 @@ int openMP(int numThreads) {
 
 	printf("Training cases: %i \n", cases.size());
 
-	vector<layer_t*> slaves[numThreads];
+	vector<vector<layer_t*>> slaves;
 
 	for (int t = 0; t < numThreads; t++) {
-		slaves[t] = getExampleLayers1(cases[0].data.size);
+		slaves.push_back(getExampleLayers1(cases[0].data.size));
 	}
 
 #pragma omp parallel num_threads(numThreads)
@@ -222,7 +222,10 @@ int openMP(int numThreads) {
 	// end:
 
 	// warm the model
-	master = slaves[0];
+	master = getExampleLayers1(cases[0].data.size);
+
+	printf("*** init master *** \n");
+	singleTest(master);
 
 	// Join slaves
 
@@ -276,7 +279,10 @@ int openMP(int numThreads) {
 	printf("*** END OF TRAINING *** \n");
 
 	// TEST
+	printf("*** Slave 0 *** \n");
+	singleTest(slaves[0]);
 
+	printf("*** Master *** \n");
 	return singleTest(master);
 }
 

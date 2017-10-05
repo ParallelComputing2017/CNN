@@ -18,16 +18,16 @@ using namespace boost::timer;
 
 #include "NeuralNetwork/NeuralNetwork.hpp"
 
-#include "CNN/MNIST.h"
+#include "MNIST.h"
 
 void writeCSV(string program, int threads, float runningTime);
 void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
 
-	int threads = 3;
+	int threads = 4;
 	string self(argv[0]);
-	string mode = "posix";
+	string mode = "all";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: Posix <mode_name> <num_threads>\n");
@@ -47,10 +47,10 @@ int main(int argc, char *argv[]) {
 	if (mode.compare("posix") == 0 || all) {
 
 		timer.start();
-		posix(threads);
+		int digit = posix(threads);
 		timer.stop();
 
-		printLog("Posix", timer, 0);
+		printLog("Posix", timer, digit);
 	}
 	if (mode.compare("openmp") == 0 || all) {
 
