@@ -10,7 +10,6 @@
 #include <pthread.h>
 #include <omp.h>
 
-
 #include "CNN/neural_network.h"
 
 using namespace std;
@@ -104,43 +103,6 @@ int singleTest(vector<layer_t*> master) {
 	return digit;
 }
 
-
-int mainExample() {
-
-	vector<case_t> cases = read_test_cases();
-
-	vector<layer_t*> layers;
-
-	layers = getExampleLayers1(cases[0].data.size);
-
-	//layers = getExampleLayers2(cases);
-
-	float amse = 0;
-	int ic = 0;
-
-	printf("Training cases: %i \n", cases.size());
-
-	for (long ep = 0; ep < cases.size();) {
-
-		for (case_t& t : cases) {
-			float xerr = train(layers, t.data, t.out);
-			amse += xerr;
-
-			ep++;
-			ic++;
-
-			if (ep % 1000 == 0) {
-				cout << "case " << ep << " err=" << amse / ic << endl;
-			}
-		}
-	}
-	// end:
-
-	// TEST
-
-	return singleTest(layers);
-}
-
 vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 		vector<layer_t*> layers) {
 
@@ -158,13 +120,24 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 			ic++;
 
 			if (ep % 4000 == 0) {
-				printf("ep: %i,\t i: %i,\t err: %f \n",
-						ep, i, amse / ic);
+				printf("ep: %i,\t i: %i,\t err: %f \n", ep, i, amse / ic);
 			}
 		}
 	}
 
 	return layers;
+}
+
+int sequential() {
+
+	vector<case_t> cases = read_test_cases();
+
+	vector<layer_t*> layers = getExampleLayers1(cases[0].data.size);
+
+	layers = training(cases, 0, cases.size()-1, layers);
+
+	// TEST
+	return singleTest(layers);
 }
 
 int openMP(int numThreads) {
@@ -177,7 +150,7 @@ int openMP(int numThreads) {
 
 	//layers = getExampleLayers2(cases);
 
-	printf("Training cases: %i \n", cases.size());
+	printf("Training cases: %lu \n", cases.size());
 
 	vector<vector<layer_t*>> slaves;
 
@@ -198,26 +171,8 @@ int openMP(int numThreads) {
 
 		vector<layer_t*> layers = slaves[threadId];
 
-		float amse = 0;
-		int ic = 0;
+		layers = training(cases, batchStart, batchEnd, layers);
 
-		for (long ep = 0; ep < batchSize;) {
-
-			for (int i = batchStart; i < batchEnd; i++) {
-				case_t& t = cases.at(i);
-				float xerr = train(layers, t.data, t.out);
-				amse += xerr;
-
-				ep++;
-				ic++;
-
-				if (ep % 4000 == 0) {
-					printf("thread: %i,\t ep: %i,\t i: %i,\t err: %f \n",
-							threadId, ep, i, amse / ic);
-				}
-			}
-			break;
-		}
 	}
 	// end:
 
@@ -278,11 +233,6 @@ int openMP(int numThreads) {
 	// TODO remove
 	printf("*** END OF TRAINING *** \n");
 
-	// TEST
-	printf("*** Slave 0 *** \n");
-	singleTest(slaves[0]);
-
-	printf("*** Master *** \n");
 	return singleTest(master);
 }
 
@@ -308,8 +258,6 @@ void *training(void *threadarg) {
 
 }
 
-
-
 int posix(int numThreads) {
 
 	vector<case_t> cases = read_test_cases();
@@ -320,7 +268,7 @@ int posix(int numThreads) {
 
 	//layers = getExampleLayers2(cases);
 
-	printf("Training cases: %i \n", cases.size());
+	printf("Training cases: %lu \n", cases.size());
 
 	vector<layer_t*> slaves[numThreads];
 
@@ -398,13 +346,10 @@ int posix(int numThreads) {
 		}
 	}
 
-
-
 // TODO remove
 	printf("*** END OF TRAINING *** \n");
 
 	return singleTest(master);
 
 }
-
 

@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	if (mode.compare("single") == 0) {
 
 		timer.start();
-		int digit = mainExample();
+		int digit = sequential();
 		timer.stop();
 
 		printLog("Single", timer, digit);
