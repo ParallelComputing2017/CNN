@@ -1,8 +1,8 @@
 #!/bin/bash
 
-threads=14
+threads=0
 mode="single"
-cnn="./Release/CNN"
+cnn="./Release/CNN_CUDA"
 
 # Sequential version
 eval "$cnn $mode $threads"
@@ -10,7 +10,7 @@ eval "$cnn $mode $threads"
 # Parallel version
 mode="all"
 
-for t in {1..16}
+for t in {1..8}
 do
 	threads=$t
 	eval "$cnn $mode $threads"

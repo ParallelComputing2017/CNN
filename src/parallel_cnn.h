@@ -32,7 +32,8 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 			ic++;
 
 			if (ep % 4000 == 0) {
-				printf("ep: %i,\t i: %i,\t err: %f \n", ep, i, amse / ic);
+				// TODO remove
+				//printf("ep: %i,\t i: %i,\t err: %f \n", ep, i, amse / ic);
 			}
 		}
 	}
@@ -72,7 +73,7 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 			break;
 		case layer_type::fc: {
 			// TODO remove
-			printf("*** Layer %i \n", layer);
+			//printf("*** Layer %i \n", layer);
 
 			fc_layer_t* fcMasterLayer = (fc_layer_t*) (masterLayer);
 
@@ -87,8 +88,8 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 			}
 
 			// TODO remove
-			printf("sizeof(slaves): %f \n",
-					((float) sizeof(slaves) / sizeof(slaves[0])));
+			/*printf("sizeof(slaves): %f \n",
+					((float) sizeof(slaves) / sizeof(slaves[0])));*/
 
 			break;
 		}
@@ -134,8 +135,9 @@ int openMP(int numThreads) {
 		int batchStart = batchSize * threadId;
 		int batchEnd = batchStart + batchSize - 1;
 
-		printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
-				threadId, batchSize, batchStart, batchEnd);
+		// TODO remove
+		/*printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
+				threadId, batchSize, batchStart, batchEnd);*/
 
 		vector<layer_t*> layers = slaves[threadId];
 
@@ -147,8 +149,9 @@ int openMP(int numThreads) {
 	// warm the model
 	master = getExampleLayers1(cases[0].data.size);
 
-	printf("*** init master *** \n");
-	singleTest(master);
+	// TODO remove
+	/*printf("*** init master *** \n");
+	singleTest(master);*/
 
 	// Join slaves
 	master = joinSlaves(master, slaves);
