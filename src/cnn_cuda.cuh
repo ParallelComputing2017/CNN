@@ -9,7 +9,7 @@
 #define CNN_CUDA_CUH_
 
 
-vector<vector<layer_t*>> cuda_training(vector<case_t> cases, int batchSize,
+vector<vector<layer_t*>> cuda_training(int maxBlocks, vector<case_t> cases, int batchSize,
 		vector<vector<layer_t*>> slaves);
 
 

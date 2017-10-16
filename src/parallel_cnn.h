@@ -90,7 +90,7 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 
 			// TODO remove
 			/*printf("sizeof(slaves): %f \n",
-					((float) sizeof(slaves) / sizeof(slaves[0])));*/
+			 ((float) sizeof(slaves) / sizeof(slaves[0])));*/
 
 			break;
 		}
@@ -138,7 +138,7 @@ int openMP(int numThreads) {
 
 		// TODO remove
 		/*printf("thread: %i, batchSize: %i, batchStart: %i, batchEnd: %i,  \n",
-				threadId, batchSize, batchStart, batchEnd);*/
+		 threadId, batchSize, batchStart, batchEnd);*/
 
 		vector<layer_t*> layers = slaves[threadId];
 
@@ -152,7 +152,7 @@ int openMP(int numThreads) {
 
 	// TODO remove
 	/*printf("*** init master *** \n");
-	singleTest(master);*/
+	 singleTest(master);*/
 
 	// Join slaves
 	master = joinSlaves(master, slaves);
@@ -184,13 +184,9 @@ int cuda(int maxBlocks) {
 		slaves.push_back(getExampleLayers1(cases[0].data.size));
 	}
 
+	int batchSize = cases.size() / maxBlocks;
 
-
-		int batchSize = cases.size() / maxBlocks;
-
-
-		slaves = cuda_training(cases, batchSize, slaves);
-
+	slaves = cuda_training(maxBlocks, cases, batchSize, slaves);
 
 	// end:
 
@@ -199,7 +195,7 @@ int cuda(int maxBlocks) {
 
 	// TODO remove
 	/*printf("*** init master *** \n");
-	singleTest(master);*/
+	 singleTest(master);*/
 
 	// Join slaves
 	master = joinSlaves(master, slaves);

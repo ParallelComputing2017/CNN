@@ -9,6 +9,7 @@
 #include <helper_cuda.h>
 
 #include <vector>
+#include <algorithm>   // std::min
 
 #include "types.h"
 #include "CNN/layer_t.h"
@@ -23,7 +24,7 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 
 	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
 
-	printf("Index: %i, Cases: %f", index, sizeof(d_cases));
+	printf("Index: %i, Cases: %lu \t", index, sizeof(d_cases));
 
 
 	__syncthreads();
@@ -33,7 +34,7 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 /******************************************************************************
  * Host main routine
  */
-std::vector<std::vector<layer_t*>> cuda_training(std::vector<case_t> cases, int batchSize,
+std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case_t> cases, int batchSize,
 		std::vector<std::vector<layer_t*>> slaves){
 
 	int blocksPerGrid, threadsPerBlock, i, size;
@@ -48,7 +49,7 @@ std::vector<std::vector<layer_t*>> cuda_training(std::vector<case_t> cases, int 
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
-	blocksPerGrid = deviceProp.multiProcessorCount;
+	blocksPerGrid = std::min(deviceProp.multiProcessorCount, maxBlocks);
 	int cudaCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
 	threadsPerBlock = deviceProp.maxThreadsPerBlock;
 	totalThreads = blocksPerGrid * threadsPerBlock;
@@ -57,6 +58,9 @@ std::vector<std::vector<layer_t*>> cuda_training(std::vector<case_t> cases, int 
 
 	h_cases = &cases[0];
 	size = sizeof(case_t)*cases.size();
+
+	// TODO remove
+	printf("sizeof(h_cases[0]) * cases.size() = %lu * %lu \n", sizeof(h_cases[0]), cases.size());
 
 	if (h_cases == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -112,7 +116,7 @@ std::vector<std::vector<layer_t*>> cuda_training(std::vector<case_t> cases, int 
 
 	// Free host memory
 
-	free(h_cases);
+	//free(h_cases);
 	err = cudaDeviceReset();
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to deinitialize the device! error=%s\n",
