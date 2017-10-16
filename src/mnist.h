@@ -1,11 +1,10 @@
 #pragma once
 
+#include "types.h"
+
 using namespace std;
 
-struct case_t {
-	tensor_t<float> data;
-	tensor_t<float> out;
-};
+
 
 uint8_t* read_file(const char* szFile) {
 	ifstream file(szFile, ios::binary | ios::ate);

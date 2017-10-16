@@ -8,7 +8,10 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 
-#include "parallel_cnn.h"
+#include <vector>
+
+#include "types.h"
+#include "CNN/layer_t.h"
 
 /**
  * CUDA Kernel Device code
@@ -30,14 +33,14 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 /******************************************************************************
  * Host main routine
  */
-vector<vector<layer_t*>> cuda_training(vector<case_t> cases, int batchSize,
-		vector<vector<layer_t*>> slaves){
+std::vector<std::vector<layer_t*>> cuda_training(std::vector<case_t> cases, int batchSize,
+		std::vector<std::vector<layer_t*>> slaves){
 
 	int blocksPerGrid, threadsPerBlock, i, size;
 	int totalThreads;
 	case_t *h_cases, *d_cases;
 	int *h_batchSize, *d_batchSize;
-	vector<vector<layer_t*>> *h_slaves, *d_slaves;
+	std::vector<std::vector<layer_t*>> *h_slaves, *d_slaves;
 
 	// Get device info
 	int dev = 0;
