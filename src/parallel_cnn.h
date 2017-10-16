@@ -12,6 +12,7 @@
 
 #include "CNN/neural_network.h"
 #include "mnist.h"
+#include "cnn_cuda.cuh"
 
 using namespace std;
 
@@ -144,6 +145,53 @@ int openMP(int numThreads) {
 		layers = training(cases, batchStart, batchEnd, layers);
 
 	}
+	// end:
+
+	// warm the model
+	master = getExampleLayers1(cases[0].data.size);
+
+	// TODO remove
+	/*printf("*** init master *** \n");
+	singleTest(master);*/
+
+	// Join slaves
+	master = joinSlaves(master, slaves);
+
+	// TODO remove
+	printf("*** END OF TRAINING *** \n");
+
+	return singleTest(master);
+}
+
+/*
+ * Run in a Nvidia GPU
+ */
+int cuda(int maxBlocks) {
+
+	vector<case_t> cases = read_training_cases();
+
+	vector<layer_t*> master;
+
+	master = getExampleLayers1(cases[0].data.size);
+
+	//layers = getExampleLayers2(cases);
+
+	printf("Training cases: %lu \n", cases.size());
+
+	vector<vector<layer_t*>> slaves;
+
+	for (int t = 0; t < maxBlocks; t++) {
+		slaves.push_back(getExampleLayers1(cases[0].data.size));
+	}
+
+
+
+		int batchSize = cases.size() / maxBlocks;
+
+
+		slaves = cuda_training(cases, batchSize, slaves);
+
+
 	// end:
 
 	// warm the model

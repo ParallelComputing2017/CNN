@@ -30,8 +30,8 @@ int main(int argc, char *argv[]) {
 	string mode = "all";
 
 	if (argc != 3) { // argc should be 3 for correct execution
-		printf("Usage: Posix <mode_name> <num_threads>\n");
-		printf("\tModes: all, posix, openmp, single \n");
+		printf("Usage: <mode> <num_threads>\n");
+		printf("\tModes: all, posix, openmp, single, cuda \n");
 	} else {
 		mode = argv[1];
 		threads = atoi(argv[2]);
@@ -61,6 +61,15 @@ int main(int argc, char *argv[]) {
 		printLog("OpenMP", timer, digit);
 
 	}
+	if (mode.compare("cuda") == 0 || all) {
+
+			timer.start();
+			int digit = cuda(threads);
+			timer.stop();
+
+			printLog("CUDA", timer, digit);
+
+		}
 	if (mode.compare("single") == 0) {
 
 		timer.start();
