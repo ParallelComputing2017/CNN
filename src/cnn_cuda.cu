@@ -20,12 +20,14 @@
  */
 /*****************************************************************************/
 
-__global__ void training2(case_t *d_cases, long int batchSize) {
+__global__ void training2(case_t *d_cases, long int batchSize, layer_t *d_slaves, long slaves_count, long layer_count) {
 
 	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
 
-	printf("Index: %i, Cases: %lu, batchSize: %i \t", index, sizeof(d_cases[0]), batchSize);
-
+	printf("Index: %i, Cases: %lu, batchSize: %i, ", index, sizeof(d_cases[0]),
+			batchSize);
+	printf("sizeof(d_slaves[0]): %lu, slaves_count: %i, layer_count: %i \t", sizeof(d_slaves[0]),
+			slaves_count, layer_count);
 
 	__syncthreads();
 
@@ -34,13 +36,13 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 /******************************************************************************
  * Host main routine
  */
-std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case_t> cases, int batchSize,
-		std::vector<std::vector<layer_t*>> slaves){
+std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks,
+		std::vector<case_t> cases, int batchSize,
+		std::vector<std::vector<layer_t*>> slaves) {
 
 	int blocksPerGrid, threadsPerBlock, size;
 	int totalThreads;
 	case_t *h_cases, *d_cases;
-	std::vector<std::vector<layer_t*>> *h_slaves, *d_slaves;
 
 	// Get device info
 	int dev = 0;
@@ -56,10 +58,11 @@ std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case
 	cudaError_t err = cudaSuccess;
 
 	h_cases = &cases[0];
-	size = sizeof(case_t)*cases.size();
+	size = sizeof(case_t) * cases.size();
 
 	// TODO remove
-	printf("sizeof(h_cases[0]) * cases.size() = %lu * %lu \n", sizeof(h_cases[0]), cases.size());
+	printf("sizeof(h_cases[0]) * cases.size() = %lu * %lu \n",
+			sizeof(h_cases[0]), cases.size());
 
 	if (h_cases == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -69,7 +72,6 @@ std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case
 	// copy vector to array
 	copy(cases.begin(), cases.end(), h_cases);
 
-
 	err = cudaMalloc((void **) &d_cases, size);
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n",
@@ -77,8 +79,39 @@ std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case
 		exit(EXIT_FAILURE);
 	}
 
-	err = cudaMemcpy(d_cases, h_cases, size,
-			cudaMemcpyHostToDevice);
+	err = cudaMemcpy(d_cases, h_cases, size, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to copy vector C from device to host (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	// Copy slaves to device
+
+	long slaves_count = slaves.size();
+	long layer_count = slaves.at(0).size();
+
+	layer_t *h_slaves, *d_slaves;
+
+	h_slaves = (new layer_t[slaves_count*layer_count]);
+
+	for (int s = 0; s < slaves_count; s++) {
+		copy(slaves[s].begin(), slaves[s].end(), h_slaves);
+		h_slaves += slaves[s].size();
+
+	}
+
+	int slaves_mem_size = sizeof(case_t) * slaves_count * layer_count;
+
+	err = cudaMalloc((void **) &d_slaves, slaves_mem_size);
+	if (err != cudaSuccess) {
+		fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	err = cudaMemcpy(d_slaves, h_slaves, slaves_mem_size, cudaMemcpyHostToDevice);
 	if (err != cudaSuccess) {
 		fprintf(stderr,
 				"Failed to copy vector C from device to host (error code %s)!\n",
@@ -91,7 +124,7 @@ std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case
 	printf("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
-	training2<<<blocksPerGrid, threadsPerBlock>>>(d_cases, batchSize);
+	training2<<<blocksPerGrid, threadsPerBlock>>>(d_cases, batchSize, d_slaves, slaves_count, layer_count);
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {

@@ -9,7 +9,7 @@
 
 #pragma pack(push, 1)
 
-struct fc_layer_t {
+struct fc_layer_cuda_t {
 	layer_type type = layer_type::fc;
 	tensor_t<float> grads_in;
 	tensor_t<float> in;
@@ -18,7 +18,7 @@ struct fc_layer_t {
 	tensor_t<float> weights;
 	std::vector<gradient_t> gradients;
 
-	fc_layer_t(tdsize in_size, int out_size) :
+	fc_layer_cuda_t(tdsize in_size, int out_size) :
 			in(in_size.x, in_size.y, in_size.z), out(out_size, 1, 1), grads_in(
 					in_size.x, in_size.y, in_size.z), weights(
 					in_size.x * in_size.y * in_size.z, out_size, 1) {

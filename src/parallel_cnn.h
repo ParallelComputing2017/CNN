@@ -76,14 +76,14 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 			// TODO remove
 			//printf("*** Layer %i \n", layer);
 
-			fc_layer_t* fcMasterLayer = (fc_layer_t*) (masterLayer);
+			fc_layer_cuda_t* fcMasterLayer = (fc_layer_cuda_t*) (masterLayer);
 
 			for (vector<layer_t*> slave : slaves) {
 				layer_t* slaveLayer = slave[layer];
 				if (slaveLayer->type != layer_type::fc) {
 					printf("ERROR Layer type");
 				}
-				fc_layer_t* fcSlaveLayer = (fc_layer_t*) (slaveLayer);
+				fc_layer_cuda_t* fcSlaveLayer = (fc_layer_cuda_t*) (slaveLayer);
 
 				fcMasterLayer->updateWeights(fcSlaveLayer->weights);
 			}
