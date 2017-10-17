@@ -24,7 +24,7 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 
 	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
 
-	printf("Index: %i, Cases: %lu \t", index, sizeof(d_cases));
+	printf("Index: %i, Cases: %lu, batchSize: %i \t", index, sizeof(d_cases[0]), batchSize);
 
 
 	__syncthreads();
@@ -37,10 +37,9 @@ __global__ void training2(case_t *d_cases, long int batchSize) {
 std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case_t> cases, int batchSize,
 		std::vector<std::vector<layer_t*>> slaves){
 
-	int blocksPerGrid, threadsPerBlock, i, size;
+	int blocksPerGrid, threadsPerBlock, size;
 	int totalThreads;
 	case_t *h_cases, *d_cases;
-	int *h_batchSize, *d_batchSize;
 	std::vector<std::vector<layer_t*>> *h_slaves, *d_slaves;
 
 	// Get device info
@@ -91,7 +90,9 @@ std::vector<std::vector<layer_t*>> cuda_training(int maxBlocks, std::vector<case
 
 	printf("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
+
 	training2<<<blocksPerGrid, threadsPerBlock>>>(d_cases, batchSize);
+
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n",

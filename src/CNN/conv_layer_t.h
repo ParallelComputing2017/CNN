@@ -44,7 +44,7 @@ struct conv_layer_t {
 			filters.push_back(t);
 		}
 		for (int i = 0; i < number_filters; i++) {
-			tensor_t < gradient_t > t(extend_filter, extend_filter, in_size.z);
+			tensor_t<gradient_t> t(extend_filter, extend_filter, in_size.z);
 			filter_grads.push_back(t);
 		}
 
