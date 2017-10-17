@@ -2,6 +2,7 @@
 #include "conv_layer_t.h"
 #include "dropout_layer_t.h"
 #include "fc_layer.h"
+#include "fc_layer_cuda.cuh"
 #include "optimization_method.h"
 #include "pool_layer_t.h"
 #include "relu_layer_t.h"
@@ -18,7 +19,7 @@ static void calc_grads( layer_t* layer, tensor_t<float>& grad_next_layer )
 			((relu_layer_t*)layer)->calc_grads( grad_next_layer );
 			return;
 		case layer_type::fc:
-			((fc_layer_cuda_t*)layer)->calc_grads( grad_next_layer );
+			((fc_layer_t*)layer)->calc_grads( grad_next_layer );
 			return;
 		case layer_type::pool:
 			((pool_layer_t*)layer)->calc_grads( grad_next_layer );
@@ -42,7 +43,7 @@ static void fix_weights( layer_t* layer )
 			((relu_layer_t*)layer)->fix_weights();
 			return;
 		case layer_type::fc:
-			((fc_layer_cuda_t*)layer)->fix_weights();
+			((fc_layer_t*)layer)->fix_weights();
 			return;
 		case layer_type::pool:
 			((pool_layer_t*)layer)->fix_weights();
@@ -66,7 +67,7 @@ static void activate( layer_t* layer, tensor_t<float>& in )
 			((relu_layer_t*)layer)->activate( in );
 			return;
 		case layer_type::fc:
-			((fc_layer_cuda_t*)layer)->activate( in );
+			((fc_layer_t*)layer)->activate( in );
 			return;
 		case layer_type::pool:
 			((pool_layer_t*)layer)->activate( in );

@@ -12,7 +12,6 @@
 
 #include "CNN/neural_network.h"
 #include "mnist.h"
-#include "cnn_cuda.cuh"
 
 using namespace std;
 
@@ -76,14 +75,14 @@ vector<layer_t*> joinSlaves(vector<layer_t*> master,
 			// TODO remove
 			//printf("*** Layer %i \n", layer);
 
-			fc_layer_cuda_t* fcMasterLayer = (fc_layer_cuda_t*) (masterLayer);
+			fc_layer_t* fcMasterLayer = (fc_layer_t*) (masterLayer);
 
 			for (vector<layer_t*> slave : slaves) {
 				layer_t* slaveLayer = slave[layer];
 				if (slaveLayer->type != layer_type::fc) {
 					printf("ERROR Layer type");
 				}
-				fc_layer_cuda_t* fcSlaveLayer = (fc_layer_cuda_t*) (slaveLayer);
+				fc_layer_t* fcSlaveLayer = (fc_layer_t*) (slaveLayer);
 
 				fcMasterLayer->updateWeights(fcSlaveLayer->weights);
 			}
@@ -170,40 +169,14 @@ int cuda(int maxBlocks) {
 
 	vector<case_t> cases = read_training_cases();
 
-	vector<layer_t*> master;
-
-	master = getExampleLayers1(cases[0].data.size);
-
-	//layers = getExampleLayers2(cases);
-
 	printf("Training cases: %lu \n", cases.size());
 
-	vector<vector<layer_t*>> slaves;
+	vector<layer_t*> layers = getExampleLayers1Cuda(cases[0].data.size);
 
-	for (int t = 0; t < maxBlocks; t++) {
-		slaves.push_back(getExampleLayers1(cases[0].data.size));
-	}
+	layers = training(cases, 0, cases.size() - 1, layers);
 
-	int batchSize = cases.size() / maxBlocks;
-
-	slaves = cuda_training(maxBlocks, cases, batchSize, slaves);
-
-	// end:
-
-	// warm the model
-	master = getExampleLayers1(cases[0].data.size);
-
-	// TODO remove
-	/*printf("*** init master *** \n");
-	 singleTest(master);*/
-
-	// Join slaves
-	master = joinSlaves(master, slaves);
-
-	// TODO remove
-	printf("*** END OF TRAINING *** \n");
-
-	return singleTest(master);
+	// TEST
+	return singleTest(layers);
 }
 
 struct thread_data {
