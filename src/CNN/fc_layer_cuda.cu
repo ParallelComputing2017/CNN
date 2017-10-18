@@ -139,8 +139,9 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
 
-	printf("Index: %i, in size: (%i, %i, %i) \t", index, d_in->size.x,
-			d_in->size.y, d_in->size.z);
+	printf("d_input 0: %f \n", *d_input);
+
+	printf("d_out: %i, %i, %i \n", d_out->size.x, d_out->size.y, d_out->size.z);
 
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;
@@ -152,13 +153,15 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 					int m = z * (d_in->size.x * d_in->size.y)
 							+ j * (d_in->size.x) + i;
 
-					inputv += get(d_in,i, j, z) * get(d_weights,m, n, 0);
+					inputv += get(d_in, i, j, z) * get(d_weights, m, n, 0);
 				}
 
 		*(d_input + n) = inputv;
 
-		get(d_out, n, 0, 0)= activator_function(inputv);
+		set(d_out, n, 0, 0, activator_function(inputv));
 	}
+
+	printf("d_input 0: %f \n", *d_input);
 
 }
 
@@ -181,9 +184,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
-	blocksPerGrid = std::min(deviceProp.multiProcessorCount, 2);
+	blocksPerGrid = std::min(deviceProp.multiProcessorCount, 1);
 	int cudaCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
-	threadsPerBlock = deviceProp.maxThreadsPerBlock;
+	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock, 1);
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
 	cudaError_t err = cudaSuccess;
@@ -240,13 +243,65 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		exit(EXIT_FAILURE);
 	}
 
+	// Reserve input memory space
+
+	h_input = &input[0];
+	int input_mem_size = sizeof(float) * input.size();
+
+	err = cudaMalloc((void **) &d_input, input_mem_size);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to allocate device vector INPUT (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	err = cudaMemcpy(d_input, h_input, input_mem_size, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to copy vector OUT from device to host (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	// Reserve memory space for OUT
+
+	h_out = &out;
+	int out_mem_size = sizeof(out);
+
+	err = cudaMalloc((void **) &d_out, out_mem_size);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to allocate device vector OUT (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	err = cudaMemcpy(d_out, h_out, out_mem_size, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to copy vector OUT from device to host (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	// TODO
+	//printf("Tensor in: \n");
+	//print_tensor(*h_in);
+
+	// TODO remove
+	printf("input size: %lu input 0: %f \n", input.size(), input[0]);
+
+	printf("h_input 0: %f \n", *h_input);
+
+	printf("out: %i, %i, %i \n", out.size.x, out.size.y, out.size.z);
+
+	printf("h_out: %i, %i, %i \n", h_out->size.x, h_out->size.y, h_out->size.z);
+
 	// Lanzar KERNEL
 
 	printf("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
-
-	printf("Tensor in: \n");
-	print_tensor(*h_in);
 
 	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
 			d_out);
@@ -259,9 +314,6 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	}
 
 	// get input array
-
-	h_input = &input[0];
-	int input_mem_size = sizeof(float) * input.size();
 
 	err = cudaMemcpy(h_input, d_input, input_mem_size, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
@@ -279,8 +331,6 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	}
 
 	// Get out
-	h_out = &out;
-	int out_mem_size = sizeof(out);
 
 	err = cudaMemcpy(h_out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess) {
@@ -307,6 +357,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		exit(EXIT_FAILURE);
 	}
 	// TODO remove
-	printf("cuda out: ");
+	printf("cuda out: %i, %i, %i \n", h_out->size.x, h_out->size.y,
+			h_out->size.z);
+	print_tensor(*h_out);
 }
 
