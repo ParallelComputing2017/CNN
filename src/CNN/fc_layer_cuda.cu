@@ -124,6 +124,8 @@ __device__ float& get(tensor_t<float> *t, int _x, int _y, int _z) {
 	assert(_x >= 0 && _y >= 0 && _z >= 0);
 	assert(_x < t->size.x && _y < t->size.y && _z < t->size.z);
 
+	printf("get: %i, %i, %i \n", _x, _y, _z);
+
 	return t->data[_z * (t->size.x * t->size.y) + _y * (t->size.x) + _x];
 }
 
@@ -143,6 +145,9 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 	printf("d_out: %i, %i, %i \n", d_out->size.x, d_out->size.y, d_out->size.z);
 
+	printf("d_weights: %i, %i, %i \n", d_weights->size.x, d_weights->size.y,
+			d_weights->size.z);
+
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;
 
@@ -153,7 +158,11 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 					int m = z * (d_in->size.x * d_in->size.y)
 							+ j * (d_in->size.x) + i;
 
+					printf("m : %i \n", m);
+
 					inputv += get(d_in, i, j, z) * get(d_weights, m, n, 0);
+
+					printf("inputv: %f \n", inputv);
 				}
 
 		*(d_input + n) = inputv;
@@ -195,7 +204,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	int in_mem_size = sizeof(in);
 
 	// TODO remove
-	printf("sizeof(in) , sizeof(out) = %lu * %lu \n", sizeof(in), sizeof(in));
+	printf("sizeof(in) , sizeof(out) = %lu * %lu \n", sizeof(in), sizeof(out));
+
+	printf("in: %i, %i, %i \n", in.size.x, in.size.y, in.size.z);
 
 	if (h_in == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -217,10 +228,44 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		exit(EXIT_FAILURE);
 	}
 
+	// IN DATA
+
+	float *d_in_data;
+	long in_data_size = sizeof(*d_in_data) * in.size.x * in.size.y * in.size.z;
+
+	printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
+
+	err = cudaMalloc((void **) &d_in_data, in_data_size);
+	if (err != cudaSuccess) {
+		fprintf(stderr, "Failed to allocate IN.DATA (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	err = cudaMemcpy(d_in_data, in.data, in_data_size, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to copy IN.DATA from device to host (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
+	err = cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
+			cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(stderr,
+				"Failed to Binding pointers IN.DATA from device to host (error code %s)!\n",
+				cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+
 	// Copy weights
 
 	h_weights = &weights;
-	int weights_mem_size = sizeof(weights);
+	long weights_mem_size = sizeof(weights);
+
+	printf("sizeof(weights) == weights_mem_size => %lu == %lu \n",
+			sizeof(weights), weights_mem_size);
 
 	if (h_weights == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -246,7 +291,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// Reserve input memory space
 
 	h_input = &input[0];
-	int input_mem_size = sizeof(float) * input.size();
+	long input_mem_size = sizeof(input[0]) * input.size();
+
+	printf("input_mem_size : %lu \n", input_mem_size);
 
 	err = cudaMalloc((void **) &d_input, input_mem_size);
 	if (err != cudaSuccess) {
@@ -306,9 +353,11 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
 			d_out);
 
+	cudaDeviceSynchronize();
+
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to launch vectorAdd kernel (error code %s)!\n",
+		fprintf(stderr, "Failed to launch kernel (error code %s)!\n",
 				cudaGetErrorString(err));
 		exit(EXIT_FAILURE);
 	}
