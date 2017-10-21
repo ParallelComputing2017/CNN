@@ -17,6 +17,8 @@
 
 #include "fc_layer_cuda.cuh"
 
+#include "../CUDA/utils.cuh"
+
 void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		std::vector<float> input, tensor_t<float> out);
 
@@ -354,6 +356,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 			d_out);
 
 	cudaDeviceSynchronize();
+
+	cudaCheckError("Launch kernel");
 
 	err = cudaGetLastError();
 	if (err != cudaSuccess) {
