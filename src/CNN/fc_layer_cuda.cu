@@ -200,8 +200,6 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock, 1);
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
-	cudaError_t err = cudaSuccess;
-
 	h_in = &in;
 	int in_mem_size = sizeof(in);
 
@@ -215,20 +213,13 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		exit(EXIT_FAILURE);
 	}
 
-	err = cudaMalloc((void **) &d_in, in_mem_size);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMalloc((void **) &d_in, in_mem_size);
 
-	err = cudaMemcpy(d_in, h_in, in_mem_size, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy vector C from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMalloc IN tensor");
+
+	cudaMemcpy(d_in, h_in, in_mem_size, cudaMemcpyHostToDevice);
+
+	cudaCheckError("cudaMemcopy to device IN tensor");
 
 	// IN DATA
 
@@ -237,29 +228,18 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
 
-	err = cudaMalloc((void **) &d_in_data, in_data_size);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate IN.DATA (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMalloc((void **) &d_in_data, in_data_size);
 
-	err = cudaMemcpy(d_in_data, in.data, in_data_size, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy IN.DATA from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMalloc IN tensor data");
 
-	err = cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
+	cudaMemcpy(d_in_data, in.data, in_data_size, cudaMemcpyHostToDevice);
+
+	cudaCheckError("cudaMemcpy to device IN tensor data");
+
+	cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
 			cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to Binding pointers IN.DATA from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+
+	cudaCheckError("cudaMemcpy Binding pointers of IN tensor data");
 
 	// Copy weights
 
@@ -274,21 +254,14 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 		exit(EXIT_FAILURE);
 	}
 
-	err = cudaMalloc((void **) &d_weights, weights_mem_size);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate device vector C (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMalloc((void **) &d_weights, weights_mem_size);
 
-	err = cudaMemcpy(d_weights, h_weights, weights_mem_size,
+	cudaCheckError("cudaMalloc Weights tensor");
+
+	cudaMemcpy(d_weights, h_weights, weights_mem_size,
 			cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy vector C from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+
+	cudaCheckError("cudaMemcpy to device Weights tensor");
 
 	// Reserve input memory space
 
@@ -297,42 +270,26 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	printf("input_mem_size : %lu \n", input_mem_size);
 
-	err = cudaMalloc((void **) &d_input, input_mem_size);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to allocate device vector INPUT (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMalloc((void **) &d_input, input_mem_size);
 
-	err = cudaMemcpy(d_input, h_input, input_mem_size, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy vector OUT from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMalloc Input array");
+
+	cudaMemcpy(d_input, h_input, input_mem_size, cudaMemcpyHostToDevice);
+
+	cudaCheckError("cudaMemcpy to device Input array");
 
 	// Reserve memory space for OUT
 
 	h_out = &out;
 	int out_mem_size = sizeof(out);
 
-	err = cudaMalloc((void **) &d_out, out_mem_size);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to allocate device vector OUT (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMalloc((void **) &d_out, out_mem_size);
 
-	err = cudaMemcpy(d_out, h_out, out_mem_size, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy vector OUT from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMalloc Out tensor");
+
+	cudaMemcpy(d_out, h_out, out_mem_size, cudaMemcpyHostToDevice);
+
+	cudaCheckError("cudaMemcpy to device Out tensor");
 
 	// TODO
 	//printf("Tensor in: \n");
@@ -359,56 +316,31 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	cudaCheckError("Launch kernel");
 
-	err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to launch kernel (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
 	// get input array
 
-	err = cudaMemcpy(h_input, d_input, input_mem_size, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy vector INPUT from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMemcpy(h_input, d_input, input_mem_size, cudaMemcpyDeviceToHost);
 
-	err = cudaFree(d_input);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to free device vector INPUT (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMemcpy to host Input array");
+
+	cudaFree(d_input);
+
+	cudaCheckError("cudaFree Input array");
 
 	// Get out
 
-	err = cudaMemcpy(h_out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		fprintf(stderr,
-				"Failed to copy OUT from device to host (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaMemcpy(h_out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
 
-	err = cudaFree(d_out);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to free device OUT (error code %s)!\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaCheckError("cudaMemcpy to host Out tensor");
+
+	cudaFree(d_out);
+
+	cudaCheckError("cudaFree Out tensor");
 
 	// Free host memory
 
-	//free(h_cases);
-	err = cudaDeviceReset();
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to deinitialize the device! error=%s\n",
-				cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	cudaDeviceReset();
+
+	cudaCheckError("cudaDeviceReset");
 	// TODO remove
 	printf("cuda out: %i, %i, %i \n", h_out->size.x, h_out->size.y,
 			h_out->size.z);
