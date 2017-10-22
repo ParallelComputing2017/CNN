@@ -20,7 +20,7 @@
 #include "../CUDA/utils.cuh"
 
 void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
-		std::vector<float> input, tensor_t<float> out);
+		std::vector<float> &input, tensor_t<float> &out);
 
 fc_layer_cuda_t::fc_layer_cuda_t(tdsize in_size, int out_size) :
 		in(in_size.x, in_size.y, in_size.z), out(out_size, 1, 1), grads_in(
@@ -53,7 +53,16 @@ float activator_derivative(float x) {
 void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	this->in = in;
 	//activate();
+
+	// TODO
+	printf("before activate");
+	print_tensor(out);
+
 	activate2cuda(in, weights, input, out);
+
+	// TODO
+	printf("after activate");
+	print_tensor(out);
 }
 
 int fc_layer_cuda_t::map(point_t d) {
@@ -177,7 +186,7 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
  * Host main routine
  */
 void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
-		std::vector<float> input, tensor_t<float> out) {
+		std::vector<float> &input, tensor_t<float> &out) {
 
 	int blocksPerGrid, threadsPerBlock;
 	int totalThreads;

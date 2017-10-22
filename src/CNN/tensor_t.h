@@ -35,6 +35,11 @@ struct tensor_t {
 	}
 
 	tensor_t<T> operator-(tensor_t<T>& other) {
+		// TODO
+		printf("this: %i, %i, %i \n", this->size.x, this->size.y, this->size.z);
+		print_tensor(*this);
+		printf("other: %i, %i, %i \n", other.size.x, other.size.y, other.size.z);
+		print_tensor(other);
 		assert(
 				size.x == other.size.x && size.y == other.size.y
 						&& size.z == other.size.z);

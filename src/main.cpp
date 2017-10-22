@@ -32,6 +32,8 @@ int main(int argc, char *argv[]) {
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: <mode> <num_threads>\n");
 		printf("\tModes: all, posix, openmp, single, cuda \n");
+		mode = "cuda";
+		threads = 2;
 	} else {
 		mode = argv[1];
 		threads = atoi(argv[2]);
