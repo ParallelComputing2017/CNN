@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
+
 #include <boost/timer/timer.hpp>
 
 #include <iostream>
@@ -18,7 +19,6 @@ using namespace boost::timer;
 
 #include "parallel_cnn.h"
 
-void writeCSV(string program, int threads, float runningTime);
 void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
@@ -87,20 +87,6 @@ void printLog(string mode, cpu_timer timer, int result) {
 
 	printf("%s\t time: %s\t result: %i \n", mode.c_str(),
 			timer.format(3, "%ws").c_str(), result);
-}
-
-void writeCSV(string program, int threads, float seconds_runningTime) {
-
-	ofstream myfile;
-
-	myfile.open("./log/" + program + ".csv", std::ofstream::app);
-
-	myfile << "\"" + program + "\"";
-	myfile << "; " + to_string(threads);
-	myfile << "; " + to_string(seconds_runningTime);
-	myfile << "\n";
-
-	myfile.close();
 }
 
 
