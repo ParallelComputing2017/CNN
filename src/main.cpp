@@ -16,8 +16,6 @@
 using namespace std;
 using namespace boost::timer;
 
-#include "NeuralNetwork/NeuralNetwork.hpp"
-
 #include "parallel_cnn.h"
 
 void writeCSV(string program, int threads, float runningTime);

@@ -2,7 +2,7 @@
 
 threads=0
 mode="single"
-cnn="./Release/CNN_CUDA"
+cnn="./Release/CNN"
 
 # Sequential version
 eval "$cnn $mode $threads"
