@@ -8,7 +8,7 @@
 #ifndef FC_LAYER_CUDA_CUH_
 #define FC_LAYER_CUDA_CUH_
 
-struct fc_layer_cuda_t {
+struct fc_layer_cuda_t{
 
 	layer_type type = layer_type::fc_cuda;
 	tensor_t<float> grads_in;

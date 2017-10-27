@@ -9,8 +9,6 @@ template<typename T>
 struct tensor_t {
 	T * data;
 
-	tdsize size;
-
 	tensor_t(int _x, int _y, int _z) {
 		data = new T[_x * _y * _z];
 		size.x = _x;
@@ -38,7 +36,8 @@ struct tensor_t {
 		// TODO
 		printf("this: %i, %i, %i \n", this->size.x, this->size.y, this->size.z);
 		print_tensor(*this);
-		printf("other: %i, %i, %i \n", other.size.x, other.size.y, other.size.z);
+		printf("other: %i, %i, %i \n", other.size.x, other.size.y,
+				other.size.z);
 		print_tensor(other);
 		assert(
 				size.x == other.size.x && size.y == other.size.y
@@ -84,12 +83,23 @@ struct tensor_t {
 	{
 		delete[] data;
 	}
+
+	tdsize getSize(){
+		return size;
+	}
+
+	tdsize size;
 };
 
 static void print_tensor(tensor_t<float>& data) {
-	int mx = data.size.x;
-	int my = data.size.y;
-	int mz = data.size.z;
+	int mx = data.getSize().x;
+	int my = data.getSize().y;
+	int mz = data.getSize().z;
+
+	printf("tensor size [ %i, %i, %i ] \n", mx, my, mz);
+
+	printf("tensor size address [ %p, %p, %p ] \n", (void*) &mx,
+			(void*) &my, (void*) &mz);
 
 	for (int z = 0; z < mz; z++) {
 		printf("[Dim%d]\n", z);

@@ -45,7 +45,7 @@ int sequential() {
 
 	vector<case_t> cases = read_training_cases();
 
-	vector<layer_t*> layers = getExampleLayers1(cases[0].data.size);
+	vector<layer_t*> layers = getExampleLayers1(cases[0].data.getSize());
 
 	layers = training(cases, 0, cases.size() - 1, layers);
 
@@ -115,7 +115,7 @@ int openMP(int numThreads) {
 
 	vector<layer_t*> master;
 
-	master = getExampleLayers1(cases[0].data.size);
+	master = getExampleLayers1(cases[0].data.getSize());
 
 	//layers = getExampleLayers2(cases);
 
@@ -124,7 +124,7 @@ int openMP(int numThreads) {
 	vector<vector<layer_t*>> slaves;
 
 	for (int t = 0; t < numThreads; t++) {
-		slaves.push_back(getExampleLayers1(cases[0].data.size));
+		slaves.push_back(getExampleLayers1(cases[0].data.getSize()));
 	}
 
 #pragma omp parallel num_threads(numThreads)
@@ -147,7 +147,7 @@ int openMP(int numThreads) {
 	// end:
 
 	// warm the model
-	master = getExampleLayers1(cases[0].data.size);
+	master = getExampleLayers1(cases[0].data.getSize());
 
 	// TODO remove
 	/*printf("*** init master *** \n");
@@ -171,7 +171,7 @@ int cuda(int maxBlocks) {
 
 	printf("Training cases: %lu \n", cases.size());
 
-	vector<layer_t*> layers = getExampleLayers1Cuda(cases[0].data.size);
+	vector<layer_t*> layers = getExampleLayers1Cuda(cases[0].data.getSize());
 
 	layers = training(cases, 0, cases.size() - 1, layers);
 
@@ -207,7 +207,7 @@ int posix(int numThreads) {
 
 	vector<layer_t*> master;
 
-	master = getExampleLayers1(cases[0].data.size);
+	master = getExampleLayers1(cases[0].data.getSize());
 
 	//layers = getExampleLayers2(cases);
 
@@ -223,7 +223,7 @@ int posix(int numThreads) {
 		thread_data_array[i].thread_id = i;
 		thread_data_array[i].numThreads = numThreads;
 		thread_data_array[i].cases = cases;
-		slaves.push_back(getExampleLayers1(cases[0].data.size));
+		slaves.push_back(getExampleLayers1(cases[0].data.getSize()));
 		thread_data_array[i].slaves = slaves[i];
 
 		pthread_create(&threads[i], NULL, training,

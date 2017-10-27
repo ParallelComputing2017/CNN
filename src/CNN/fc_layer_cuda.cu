@@ -50,7 +50,7 @@ float activator_derivative(float x) {
 	return sig * (1 - sig);
 }
 
-void fc_layer_cuda_t::activate(tensor_t<float>& in) {
+__host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	this->in = in;
 	//activate();
 
@@ -61,21 +61,21 @@ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	activate2cuda(in, weights, input, out);
 
 	// TODO
-	printf("after activate");
+	printf("\n after activate: ");
 	print_tensor(out);
 }
 
 int fc_layer_cuda_t::map(point_t d) {
-	return d.z * (in.size.x * in.size.y) + d.y * (in.size.x) + d.x;
+	return d.z * (in.getSize().x * in.getSize().y) + d.y * (in.getSize().x) + d.x;
 }
 
 void fc_layer_cuda_t::activate() {
-	for (int n = 0; n < out.size.x; n++) {
+	for (int n = 0; n < out.getSize().x; n++) {
 		float inputv = 0;
 
-		for (int i = 0; i < in.size.x; i++)
-			for (int j = 0; j < in.size.y; j++)
-				for (int z = 0; z < in.size.z; z++) {
+		for (int i = 0; i < in.getSize().x; i++)
+			for (int j = 0; j < in.getSize().y; j++)
+				for (int z = 0; z < in.getSize().z; z++) {
 					int m = map( { i, j, z });
 					inputv += in(i, j, z) * weights(m, n, 0);
 				}
@@ -87,11 +87,11 @@ void fc_layer_cuda_t::activate() {
 }
 
 void fc_layer_cuda_t::fix_weights() {
-	for (int n = 0; n < out.size.x; n++) {
+	for (int n = 0; n < out.getSize().x; n++) {
 		gradient_t& grad = gradients[n];
-		for (int i = 0; i < in.size.x; i++)
-			for (int j = 0; j < in.size.y; j++)
-				for (int z = 0; z < in.size.z; z++) {
+		for (int i = 0; i < in.getSize().x; i++)
+			for (int j = 0; j < in.getSize().y; j++)
+				for (int z = 0; z < in.getSize().z; z++) {
 					int m = map( { i, j, z });
 					float& w = weights(m, n, 0);
 					w = update_weight(w, grad, in(i, j, z));
@@ -103,15 +103,15 @@ void fc_layer_cuda_t::fix_weights() {
 
 void fc_layer_cuda_t::calc_grads(tensor_t<float>& grad_next_layer) {
 	memset(grads_in.data, 0,
-			grads_in.size.x * grads_in.size.y * grads_in.size.z
+			grads_in.getSize().x * grads_in.getSize().y * grads_in.getSize().z
 					* sizeof(float));
-	for (int n = 0; n < out.size.x; n++) {
+	for (int n = 0; n < out.getSize().x; n++) {
 		gradient_t& grad = gradients[n];
 		grad.grad = grad_next_layer(n, 0, 0) * activator_derivative(input[n]);
 
-		for (int i = 0; i < in.size.x; i++)
-			for (int j = 0; j < in.size.y; j++)
-				for (int z = 0; z < in.size.z; z++) {
+		for (int i = 0; i < in.getSize().x; i++)
+			for (int j = 0; j < in.getSize().y; j++)
+				for (int z = 0; z < in.getSize().z; z++) {
 					int m = map( { i, j, z });
 					grads_in(i, j, z) += grad.grad * weights(m, n, 0);
 				}
@@ -212,7 +212,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// TODO remove
 	printf("out[0,0,0]: %f, \n", out.get(0, 0, 0));
 
-	printf("in: %i, %i, %i \n", in.size.x, in.size.y, in.size.z);
+	printf("in: %i, %i, %i \n", in.getSize().x, in.getSize().y, in.getSize().z);
 
 	if (h_in == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -228,7 +228,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// IN DATA
 
 	float *d_in_data;
-	long in_data_size = sizeof(*d_in_data) * in.size.x * in.size.y * in.size.z;
+	long in_data_size = sizeof(*d_in_data) * in.getSize().x * in.getSize().y * in.getSize().z;
 
 	printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
 
@@ -264,8 +264,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// Weights DATA
 
 	float *d_weights_data;
-	long weights_data_size = sizeof(*d_weights_data) * weights.size.x
-			* weights.size.y * weights.size.z;
+	long weights_data_size = sizeof(*d_weights_data) * weights.getSize().x
+			* weights.getSize().y * weights.getSize().z;
 
 	cudaMalloc((void **) &d_weights_data, weights_data_size);
 	cudaCheckError("cudaMalloc Weights tensor data");
@@ -305,8 +305,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// Out DATA
 
 	float *d_out_data;
-	long out_data_size = sizeof(*d_out_data) * h_out->size.x * h_out->size.y
-			* h_out->size.z;
+	long out_data_size = sizeof(*d_out_data) * h_out->getSize().x * h_out->getSize().y
+			* h_out->getSize().z;
 
 	printf("out_data_size : %lu \n", out_data_size);
 
@@ -330,9 +330,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	printf("h_input 0: %f \n", *h_input);
 
-	printf("out: %i, %i, %i \n", out.size.x, out.size.y, out.size.z);
+	printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y, out.getSize().z);
 
-	printf("h_out: %i, %i, %i \n", h_out->size.x, h_out->size.y, h_out->size.z);
+	printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y, h_out->getSize().z);
 
 	// Lanzar KERNEL
 
@@ -368,8 +368,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	cudaCheckError("cudaDeviceReset");
 	// TODO remove
-	printf("cuda out: %i, %i, %i \n", h_out->size.x, h_out->size.y,
-			h_out->size.z);
+	printf("cuda out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,
+			h_out->getSize().z);
 	printf("cuda out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
 	print_tensor(*h_out);
 }

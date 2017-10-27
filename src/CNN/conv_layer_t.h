@@ -80,11 +80,11 @@ struct conv_layer_t {
 		float b = y;
 		return
 		{
-			normalize_range( (a - extend_filter + 1) / stride, out.size.x, true ),
-			normalize_range( (b - extend_filter + 1) / stride, out.size.y, true ),
+			normalize_range( (a - extend_filter + 1) / stride, out.getSize().x, true ),
+			normalize_range( (b - extend_filter + 1) / stride, out.getSize().y, true ),
 			0,
-			normalize_range( a / stride, out.size.x, false ),
-			normalize_range( b / stride, out.size.y, false ),
+			normalize_range( a / stride, out.getSize().x, false ),
+			normalize_range( b / stride, out.getSize().y, false ),
 			(int)filters.size() - 1,
 		};
 	}
@@ -97,14 +97,14 @@ struct conv_layer_t {
 	void activate() {
 		for (int filter = 0; filter < filters.size(); filter++) {
 			tensor_t<float>& filter_data = filters[filter];
-			for (int x = 0; x < out.size.x; x++) {
-				for (int y = 0; y < out.size.y; y++) {
+			for (int x = 0; x < out.getSize().x; x++) {
+				for (int y = 0; y < out.getSize().y; y++) {
 					point_t mapped = map_to_input( { (uint16_t) x, (uint16_t) y,
 							0 }, 0);
 					float sum = 0;
 					for (int i = 0; i < extend_filter; i++)
 						for (int j = 0; j < extend_filter; j++)
-							for (int z = 0; z < in.size.z; z++) {
+							for (int z = 0; z < in.getSize().z; z++) {
 								float f = filter_data(i, j, z);
 								float v = in(mapped.x + i, mapped.y + j, z);
 								sum += f * v;
@@ -119,7 +119,7 @@ struct conv_layer_t {
 		for (int a = 0; a < filters.size(); a++)
 			for (int i = 0; i < extend_filter; i++)
 				for (int j = 0; j < extend_filter; j++)
-					for (int z = 0; z < in.size.z; z++) {
+					for (int z = 0; z < in.getSize().z; z++) {
 						float& w = filters[a].get(i, j, z);
 						gradient_t& grad = filter_grads[a].get(i, j, z);
 						w = update_weight(w, grad);
@@ -132,14 +132,14 @@ struct conv_layer_t {
 		for (int k = 0; k < filter_grads.size(); k++) {
 			for (int i = 0; i < extend_filter; i++)
 				for (int j = 0; j < extend_filter; j++)
-					for (int z = 0; z < in.size.z; z++)
+					for (int z = 0; z < in.getSize().z; z++)
 						filter_grads[k].get(i, j, z).grad = 0;
 		}
 
-		for (int x = 0; x < in.size.x; x++) {
-			for (int y = 0; y < in.size.y; y++) {
+		for (int x = 0; x < in.getSize().x; x++) {
+			for (int y = 0; y < in.getSize().y; y++) {
 				range_t rn = map_to_output(x, y);
-				for (int z = 0; z < in.size.z; z++) {
+				for (int z = 0; z < in.getSize().z; z++) {
 					float sum_error = 0;
 					for (int i = rn.min_x; i <= rn.max_x; i++) {
 						int minx = i * stride;

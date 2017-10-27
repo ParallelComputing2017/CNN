@@ -52,16 +52,16 @@ struct fc_layer_t {
 	}
 
 	int map(point_t d) {
-		return d.z * (in.size.x * in.size.y) + d.y * (in.size.x) + d.x;
+		return d.z * (in.getSize().x * in.getSize().y) + d.y * (in.getSize().x) + d.x;
 	}
 
 	void activate() {
-		for (int n = 0; n < out.size.x; n++) {
+		for (int n = 0; n < out.getSize().x; n++) {
 			float inputv = 0;
 
-			for (int i = 0; i < in.size.x; i++)
-				for (int j = 0; j < in.size.y; j++)
-					for (int z = 0; z < in.size.z; z++) {
+			for (int i = 0; i < in.getSize().x; i++)
+				for (int j = 0; j < in.getSize().y; j++)
+					for (int z = 0; z < in.getSize().z; z++) {
 						int m = map( { i, j, z });
 						inputv += in(i, j, z) * weights(m, n, 0);
 					}
@@ -73,11 +73,11 @@ struct fc_layer_t {
 	}
 
 	void fix_weights() {
-		for (int n = 0; n < out.size.x; n++) {
+		for (int n = 0; n < out.getSize().x; n++) {
 			gradient_t& grad = gradients[n];
-			for (int i = 0; i < in.size.x; i++)
-				for (int j = 0; j < in.size.y; j++)
-					for (int z = 0; z < in.size.z; z++) {
+			for (int i = 0; i < in.getSize().x; i++)
+				for (int j = 0; j < in.getSize().y; j++)
+					for (int z = 0; z < in.getSize().z; z++) {
 						int m = map( { i, j, z });
 						float& w = weights(m, n, 0);
 						w = update_weight(w, grad, in(i, j, z));
@@ -89,16 +89,16 @@ struct fc_layer_t {
 
 	void calc_grads(tensor_t<float>& grad_next_layer) {
 		memset(grads_in.data, 0,
-				grads_in.size.x * grads_in.size.y * grads_in.size.z
+				grads_in.getSize().x * grads_in.getSize().y * grads_in.getSize().z
 						* sizeof(float));
-		for (int n = 0; n < out.size.x; n++) {
+		for (int n = 0; n < out.getSize().x; n++) {
 			gradient_t& grad = gradients[n];
 			grad.grad = grad_next_layer(n, 0, 0)
 					* activator_derivative(input[n]);
 
-			for (int i = 0; i < in.size.x; i++)
-				for (int j = 0; j < in.size.y; j++)
-					for (int z = 0; z < in.size.z; z++) {
+			for (int i = 0; i < in.getSize().x; i++)
+				for (int j = 0; j < in.getSize().y; j++)
+					for (int z = 0; z < in.getSize().z; z++) {
 						int m = map( { i, j, z });
 						grads_in(i, j, z) += grad.grad * weights(m, n, 0);
 					}
