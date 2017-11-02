@@ -7,5 +7,6 @@ enum class layer_type
 	fc_cuda,
 	relu,
 	pool,
-	dropout_layer
+	dropout_layer,
+	null
 };

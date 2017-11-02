@@ -9,19 +9,19 @@
 
 #pragma pack(push, 1)
 
-struct fc_layer_t {
-	layer_type type = layer_type::fc;
-	tensor_t<float> grads_in;
-	tensor_t<float> in;
-	tensor_t<float> out;
+class fc_layer_t: public layer_t {
+
+public:
 	std::vector<float> input;
 	tensor_t<float> weights;
 	std::vector<gradient_t> gradients;
 
 	fc_layer_t(tdsize in_size, int out_size) :
-			in(in_size.x, in_size.y, in_size.z), out(out_size, 1, 1), grads_in(
-					in_size.x, in_size.y, in_size.z), weights(
+			layer_t(in_size, out_size), weights(
 					in_size.x * in_size.y * in_size.z, out_size, 1) {
+
+		type = layer_type::fc;
+
 		input = std::vector<float>(out_size);
 		gradients = std::vector<gradient_t>(out_size);
 
@@ -31,6 +31,10 @@ struct fc_layer_t {
 			for (int h = 0; h < in_size.x * in_size.y * in_size.z; h++)
 				weights(h, i, 0) = 2.19722f / maxval * rand() / float(RAND_MAX);
 		// 2.19722f = f^-1(0.9) => x where [1 / (1 + exp(-x) ) = 0.9]
+	}
+
+	~fc_layer_t() {
+
 	}
 
 	float activator_function(float x) {
@@ -52,7 +56,8 @@ struct fc_layer_t {
 	}
 
 	int map(point_t d) {
-		return d.z * (in.getSize().x * in.getSize().y) + d.y * (in.getSize().x) + d.x;
+		return d.z * (in.getSize().x * in.getSize().y) + d.y * (in.getSize().x)
+				+ d.x;
 	}
 
 	void activate() {
@@ -89,8 +94,8 @@ struct fc_layer_t {
 
 	void calc_grads(tensor_t<float>& grad_next_layer) {
 		memset(grads_in.data, 0,
-				grads_in.getSize().x * grads_in.getSize().y * grads_in.getSize().z
-						* sizeof(float));
+				grads_in.getSize().x * grads_in.getSize().y
+						* grads_in.getSize().z * sizeof(float));
 		for (int n = 0; n < out.getSize().x; n++) {
 			gradient_t& grad = gradients[n];
 			grad.grad = grad_next_layer(n, 0, 0)
