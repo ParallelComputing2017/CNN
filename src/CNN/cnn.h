@@ -2,7 +2,7 @@
 #include "conv_layer_t.h"
 #include "dropout_layer_t.h"
 #include "fc_layer.h"
-#include "fc_layer_cuda.cuh"
+#include "fc_layer_cuda.h"
 #include "optimization_method.h"
 #include "pool_layer_t.h"
 #include "relu_layer_t.h"

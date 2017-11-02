@@ -10,6 +10,8 @@ template<typename T>
 struct tensor_t {
 	T * data;
 
+	tdsize size;
+
 	tensor_t(int _x, int _y, int _z) {
 		data = new T[_x * _y * _z];
 		size.x = _x;
@@ -89,8 +91,6 @@ struct tensor_t {
 		return size;
 	}
 
-	tdsize size;
-
 };
 
 static void print_tensor(tensor_t<float>& data) {
@@ -99,11 +99,6 @@ static void print_tensor(tensor_t<float>& data) {
 	int mz = data.getSize().z;
 
 	printf("tensor size [ %i, %i, %i ] \n", mx, my, mz);
-
-	Logger::debug("tensor size [ %i, %i, %i ] \n", mx, my, mz);
-
-	printf("tensor size address [ %p, %p, %p ] \n", (void*) &mx, (void*) &my,
-			(void*) &mz);
 
 	for (int z = 0; z < mz; z++) {
 		printf("[Dim%d]\n", z);
