@@ -2,19 +2,16 @@
 #include "layer_t.h"
 
 #pragma pack(push, 1)
-struct dropout_layer_t {
-	layer_type type = layer_type::dropout_layer;
-	tensor_t<float> grads_in;
-	tensor_t<float> in;
-	tensor_t<float> out;
+class dropout_layer_t: public layer_t {
+
+public:
 	tensor_t<bool> hitmap;
 	float p_activation;
 
 	dropout_layer_t(tdsize in_size, float p_activation) :
-			in(in_size.x, in_size.y, in_size.z), out(in_size.x, in_size.y,
-					in_size.z), hitmap(in_size.x, in_size.y, in_size.z), grads_in(
-					in_size.x, in_size.y, in_size.z), p_activation(p_activation) {
-
+			layer_t(in_size, in_size), hitmap(in_size.x, in_size.y, in_size.z), p_activation(
+					p_activation) {
+		type = layer_type::dropout_layer;
 	}
 
 	void activate(tensor_t<float>& in) {

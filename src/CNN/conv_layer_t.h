@@ -5,11 +5,9 @@
 #include "optimization_method.h"
 
 #pragma pack(push, 1)
-struct conv_layer_t {
-	layer_type type = layer_type::conv;
-	tensor_t<float> grads_in;
-	tensor_t<float> in;
-	tensor_t<float> out;
+class conv_layer_t : public layer_t{
+
+public:
 	std::vector<tensor_t<float>> filters;
 	std::vector<tensor_t<gradient_t>> filter_grads;
 	uint16_t stride;
@@ -17,11 +15,13 @@ struct conv_layer_t {
 
 	conv_layer_t(uint16_t stride, uint16_t extend_filter,
 			uint16_t number_filters, tdsize in_size) :
-			grads_in(in_size.x, in_size.y, in_size.z), in(in_size.x, in_size.y,
-					in_size.z), out((in_size.x - extend_filter) / stride + 1,
-					(in_size.y - extend_filter) / stride + 1, number_filters)
+			layer_t(in_size,
+					(tdsize ) { (in_size.x - extend_filter) / stride + 1,
+									(in_size.y - extend_filter) / stride + 1,
+									number_filters }) {
 
-	{
+		type = layer_type::conv;
+
 		this->stride = stride;
 		this->extend_filter = extend_filter;
 		assert(

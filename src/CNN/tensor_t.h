@@ -12,11 +12,16 @@ struct tensor_t {
 
 	tdsize size;
 
-	tensor_t(int _x, int _y, int _z) {
+	tensor_t(int _x, int _y, int _z){
 		data = new T[_x * _y * _z];
 		size.x = _x;
 		size.y = _y;
 		size.z = _z;
+	}
+
+	tensor_t(tdsize size) : size(size){
+
+		data = new T[size.x * size.y * size.z];
 	}
 
 	tensor_t(const tensor_t& other) {
@@ -51,6 +56,7 @@ struct tensor_t {
 			clone.data[i] -= other.data[i];
 		return clone;
 	}
+
 	tensor_t<T> operator/(float divisor) {
 		tensor_t<T> clone(*this);
 		for (int i = 0; i < clone.size.x * clone.size.y * clone.size.z; i++) {

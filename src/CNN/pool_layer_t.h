@@ -2,20 +2,18 @@
 #include "layer_t.h"
 
 #pragma pack(push, 1)
-struct pool_layer_t {
-	layer_type type = layer_type::pool;
-	tensor_t<float> grads_in;
-	tensor_t<float> in;
-	tensor_t<float> out;
+class pool_layer_t: public layer_t {
+
+public:
 	uint16_t stride;
 	uint16_t extend_filter;
 
 	pool_layer_t(uint16_t stride, uint16_t extend_filter, tdsize in_size) :
-			grads_in(in_size.x, in_size.y, in_size.z), in(in_size.x, in_size.y,
-					in_size.z), out((in_size.x - extend_filter) / stride + 1,
-					(in_size.y - extend_filter) / stride + 1, in_size.z)
-
-	{
+			layer_t(in_size,
+					(tdsize ) { (in_size.x - extend_filter) / stride + 1,
+									(in_size.y - extend_filter) / stride + 1,
+									in_size.z }) {
+		type = layer_type::pool;
 		this->stride = stride;
 		this->extend_filter = extend_filter;
 		assert(

@@ -22,10 +22,11 @@ float train(vector<layer_t*>& layers, tensor_t<float>& data,
 		tensor_t<float>& expected) {
 	for (unsigned i = 0; i < layers.size(); i++) {
 		if (i == 0) {
-			activate(layers[i], data);
-		}
-		else
-			activate(layers[i], layers[i - 1]->out);
+			//activate(layers[i], data);
+			layers[i]->activate(data);
+		} else
+			//activate(layers[i], layers[i - 1]->out);
+			layers[i]->activate(layers[i - 1]->out);
 	}
 
 	tensor_t<float> grads = layers.back()->out - expected;
@@ -42,7 +43,9 @@ float train(vector<layer_t*>& layers, tensor_t<float>& data,
 	}
 
 	float err = 0;
-	for (int i = 0; i < grads.getSize().x * grads.getSize().y * grads.getSize().z; i++) {
+	for (int i = 0;
+			i < grads.getSize().x * grads.getSize().y * grads.getSize().z;
+			i++) {
 		float f = expected.data[i];
 		if (f > 0.5)
 			err += abs(grads.data[i]);
@@ -52,13 +55,15 @@ float train(vector<layer_t*>& layers, tensor_t<float>& data,
 
 void forward(vector<layer_t*>& layers, tensor_t<float>& data) {
 	for (int i = 0; i < layers.size(); i++) {
-		if (i == 0)
-			activate(layers[i], data);
-		else
-			activate(layers[i], layers[i - 1]->out);
+		if (i == 0){
+			//activate(layers[i], data);
+			layers[i]->activate(data);
+		}else{
+			//activate(layers[i], layers[i - 1]->out);
+			layers[i]->activate(data);
+		}
 	}
 }
-
 
 /**
  * Get an example layers.
@@ -70,7 +75,7 @@ vector<layer_t*> getExampleLayers1(tdsize inputSize) {
 	conv_layer_t * layer1 = new conv_layer_t(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
 	relu_layer_t * layer2 = new relu_layer_t(layer1->out.getSize());
 	pool_layer_t * layer3 = new pool_layer_t(2, 2, layer2->out.getSize()); // 24 * 24 * 8 -> 12 * 12 * 8
-	fc_layer_t * layer4 = new fc_layer_t(layer3->out.getSize(), 10);	// 4 * 4 * 16 -> 10
+	fc_layer_t * layer4 = new fc_layer_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10
 
 	layers.push_back((layer_t*) layer1);
 	layers.push_back((layer_t*) layer2);
@@ -90,7 +95,7 @@ vector<layer_t*> getExampleLayers1Cuda(tdsize inputSize) {
 	conv_layer_t * layer1 = new conv_layer_t(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
 	relu_layer_t * layer2 = new relu_layer_t(layer1->out.getSize());
 	pool_layer_t * layer3 = new pool_layer_t(2, 2, layer2->out.getSize()); // 24 * 24 * 8 -> 12 * 12 * 8
-	fc_layer_cuda_t * layer4 = new fc_layer_cuda_t(layer3->out.getSize(), 10);	// 4 * 4 * 16 -> 10
+	fc_layer_cuda_t * layer4 = new fc_layer_cuda_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10
 
 	layers.push_back((layer_t*) layer1);
 	layers.push_back((layer_t*) layer2);
@@ -115,7 +120,7 @@ vector<layer_t*> getExampleLayers2(tdsize inputSize) {
 	relu_layer_t * layer5 = new relu_layer_t(layer4->out.getSize());
 	pool_layer_t * layer6 = new pool_layer_t(2, 2, layer5->out.getSize());// 10 * 10 * 10 -> 5 * 5 * 10
 
-	fc_layer_t * layer7 = new fc_layer_t(layer6->out.getSize(), 10);	// 4 * 4 * 16 -> 10
+	fc_layer_t * layer7 = new fc_layer_t(layer6->out.getSize(), 10);// 4 * 4 * 16 -> 10
 
 	layers.push_back((layer_t*) layer1);
 	layers.push_back((layer_t*) layer2);

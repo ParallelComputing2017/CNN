@@ -17,7 +17,7 @@ public:
 	std::vector<gradient_t> gradients;
 
 	fc_layer_t(tdsize in_size, int out_size) :
-			layer_t(in_size, out_size), weights(
+			layer_t(in_size, (tdsize){out_size, 1, 1}), weights(
 					in_size.x * in_size.y * in_size.z, out_size, 1) {
 
 		type = layer_type::fc;

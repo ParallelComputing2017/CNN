@@ -2,15 +2,12 @@
 #include "layer_t.h"
 
 #pragma pack(push, 1)
-struct relu_layer_t {
-	layer_type type = layer_type::relu;
-	tensor_t<float> grads_in;
-	tensor_t<float> in;
-	tensor_t<float> out;
+class relu_layer_t: public layer_t {
 
+public:
 	relu_layer_t(tdsize in_size) :
-			in(in_size.x, in_size.y, in_size.z), out(in_size.x, in_size.y,
-					in_size.z), grads_in(in_size.x, in_size.y, in_size.z) {
+			layer_t(in_size, in_size) {
+		type = layer_type::relu;
 	}
 
 	void activate(tensor_t<float>& in) {
