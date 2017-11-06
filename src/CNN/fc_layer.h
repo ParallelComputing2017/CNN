@@ -50,7 +50,7 @@ public:
 		return sig * (1 - sig);
 	}
 
-	void activate(tensor_t<float>& in) {
+	virtual void activate(tensor_t<float>& in) {
 		this->in = in;
 		activate();
 	}

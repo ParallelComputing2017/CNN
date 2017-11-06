@@ -28,26 +28,19 @@ __host__ __device__ float activator_function(float x) {
 	return sig;
 }
 
-float activator_derivative(float x) {
-	//float t = tanhf( x );
-	//return 1 - t * t;
-	float sig = 1.0f / (1.0f + exp(-x));
-	return sig * (1 - sig);
-}
-
 __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
-	fc_layer->in = in;
+	this->in = in;
 	//activate();
 
 	// TODO
-	printf("before activate");
-	print_tensor(fc_layer->out);
+	//printf("before activate");
+	//print_tensor(this->out);
 
-	activate2cuda(fc_layer->in, fc_layer->weights, fc_layer->input, fc_layer->out);
+	activate2cuda(this->in, this->weights, this->input, this->out);
 
 	// TODO
-	printf("\n after activate: ");
-	print_tensor(fc_layer->out);
+	//printf("\n after activate: ");
+	//print_tensor(this->out);
 }
 
 /**
@@ -75,12 +68,11 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
 
-	printf("d_input 0: %f \n", *d_input);
+	//printf("d_input 0: %f \n", *d_input);
 
-	printf("d_out: %i, %i, %i \n", d_out->size.x, d_out->size.y, d_out->size.z);
+	//printf("d_out: %i, %i, %i \n", d_out->size.x, d_out->size.y, d_out->size.z);
 
-	printf("d_weights: %i, %i, %i \n", d_weights->size.x, d_weights->size.y,
-			d_weights->size.z);
+	//printf("d_weights: %i, %i, %i \n", d_weights->size.x, d_weights->size.y, d_weights->size.z);
 
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;
@@ -96,14 +88,14 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 				}
 
-		printf("inputv: %f \n", inputv);
+		//printf("inputv: %f \n", inputv);
 
 		*(d_input + n) = inputv;
 
 		set(d_out, n, 0, 0, activator_function(inputv));
 	}
 
-	printf("d_input 0: %f \n", *d_input);
+	//printf("d_input 0: %f \n", *d_input);
 
 }
 
@@ -153,7 +145,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// IN DATA
 
 	float *d_in_data;
-	long in_data_size = sizeof(*d_in_data) * in.getSize().x * in.getSize().y * in.getSize().z;
+	long in_data_size = sizeof(*d_in_data) * in.getSize().x * in.getSize().y
+			* in.getSize().z;
 
 	printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
 
@@ -230,8 +223,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	// Out DATA
 
 	float *d_out_data;
-	long out_data_size = sizeof(*d_out_data) * h_out->getSize().x * h_out->getSize().y
-			* h_out->getSize().z;
+	long out_data_size = sizeof(*d_out_data) * h_out->getSize().x
+			* h_out->getSize().y * h_out->getSize().z;
 
 	printf("out_data_size : %lu \n", out_data_size);
 
@@ -255,9 +248,11 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	printf("h_input 0: %f \n", *h_input);
 
-	printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y, out.getSize().z);
+	printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y,
+			out.getSize().z);
 
-	printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y, h_out->getSize().z);
+	printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,
+			h_out->getSize().z);
 
 	// Lanzar KERNEL
 

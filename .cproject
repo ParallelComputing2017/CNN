@@ -35,6 +35,7 @@
 								<option id="nvcc.compiler.include.paths.2109650247" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda-8.0/samples/common/inc"/>
 								</option>
+								<option id="nvcc.compiler.option.lineinfo.1206928233" superClass="nvcc.compiler.option.lineinfo" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.160400137" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1966404900" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.2108771401" superClass="nvcc.compiler.input.c"/>
