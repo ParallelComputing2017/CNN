@@ -64,12 +64,14 @@ public:
 		for (int n = 0; n < out.getSize().x; n++) {
 			float inputv = 0;
 
-			for (int i = 0; i < in.getSize().x; i++)
-				for (int j = 0; j < in.getSize().y; j++)
+			for (int i = 0; i < in.getSize().x; i++){
+				for (int j = 0; j < in.getSize().y; j++){
 					for (int z = 0; z < in.getSize().z; z++) {
 						int m = map( { i, j, z });
 						inputv += in(i, j, z) * weights(m, n, 0);
 					}
+				}
+			}
 
 			input[n] = inputv;
 

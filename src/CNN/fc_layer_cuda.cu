@@ -19,7 +19,7 @@
 
 #include "CUDA/utils.cuh"
 
-void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
+void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
 		std::vector<float> &input, tensor_t<float> &out);
 
 __host__ __device__ float activator_function(float x) {
@@ -32,24 +32,11 @@ __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	this->in = in;
 	//activate();
 
-	// TODO
-	/*printf("IN: ");
-	 print_tensor(this->in);
-
-	 // TODO
-	 printf("weights: ");
-	 print_tensor(this->weights);
-
-	 // TODO
-	 printf("before activate: ");
-	 print_tensor(this->out);*/
-
-	activate2cuda(this->in, this->weights, this->input, this->out);
+	cudaActivate(this->in, this->weights, this->input, this->out);
 
 	// TODO
-	/*printf("\n after activate: ");
-	 print_tensor(this->out);
-	 exit(EXIT_SUCCESS);*/
+	exit(EXIT_SUCCESS);
+
 }
 
 /**
@@ -77,22 +64,20 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 	int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
+	int i = ((int) index / (d_in->size.y * d_in->size.z)) % d_in->size.x;
+	int j = ((int) index / d_in->size.z) % d_in->size.y;
+	int k = index % d_in->size.z;
+
+	printf("index: %i  (x, y, z)=(%i, %i, %i)  (i, j, k)=(%i, %i, %i) \n",
+	 index, d_in->size.x, d_in->size.y, d_in->size.z, i, j, k);
+
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;
 
-		for (int i = 0; i < d_in->size.x; i++) {
-			for (int j = 0; j < d_in->size.y; j++) {
+		// map
+		int m = k * (d_in->size.x * d_in->size.y) + j * (d_in->size.x) + i;
 
-				int z = index;
-
-				// map
-				int m = z * (d_in->size.x * d_in->size.y) + j * (d_in->size.x)
-						+ i;
-
-				inputv += get(d_in, i, j, z) * get(d_weights, m, n, 0);
-
-			}
-		}
+		inputv += get(d_in, i, j, k) * get(d_weights, m, n, 0);
 
 		//printf("inputv: %f \n", inputv);
 
@@ -106,7 +91,7 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 /******************************************************************************
  * Host main routine
  */
-void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
+void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
 		std::vector<float> &input, tensor_t<float> &out) {
 
 	int blocksPerGrid, threadsPerBlock;
@@ -122,18 +107,17 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
-	blocksPerGrid = std::min(deviceProp.multiProcessorCount, 1);
-	int cudaCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
-	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock, in.size.z);
+	int requiredThreads = in.size.x * in.size.y * in.size.z;
+
+	blocksPerGrid = std::min(deviceProp.multiProcessorCount, 2);
+
+	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock,
+			requiredThreads / blocksPerGrid);
+
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
 	h_in = &in;
 	int in_mem_size = sizeof(in);
-
-	// TODO remove
-	//printf("out[0,0,0]: %f, \n", out.get(0, 0, 0));
-
-	//printf("in: %i, %i, %i \n", in.getSize().x, in.getSize().y, in.getSize().z);
 
 	if (h_in == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -241,24 +225,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 			cudaMemcpyHostToDevice);
 	cudaCheckError("cudaMemcpy Binding pointers of Out tensor data");
 
-	//printf("h_out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
-	// TODO
-	//printf("Tensor in: \n");
-	//print_tensor(*h_in);
-
-	// TODO remove
-	//printf("input size: %lu input 0: %f \n", input.size(), input[0]);
-
-	//printf("h_input 0: %f \n", *h_input);
-
-	//printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y,out.getSize().z);
-
-	//printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,h_out->getSize().z);
-
 	// Lanzar KERNEL
 
-	Logger::debug(
-			"CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
+	Logger::debug("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
 	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
