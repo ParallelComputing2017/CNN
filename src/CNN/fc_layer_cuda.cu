@@ -75,7 +75,7 @@ __device__ void set(tensor_t<float> *t, int _x, int _y, int _z, float value) {
 __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 		float *d_input, tensor_t<float> *d_out) {
 
-	int index = threadIdx.x;
+	int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;

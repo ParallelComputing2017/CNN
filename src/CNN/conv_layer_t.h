@@ -5,7 +5,7 @@
 #include "optimization_method.h"
 
 #pragma pack(push, 1)
-class conv_layer_t : public layer_t{
+class conv_layer_t: public layer_t {
 
 public:
 	std::vector<tensor_t<float>> filters;
@@ -37,10 +37,13 @@ public:
 
 			int maxval = extend_filter * extend_filter * in_size.z;
 
-			for (int i = 0; i < extend_filter; i++)
-				for (int j = 0; j < extend_filter; j++)
-					for (int z = 0; z < in_size.z; z++)
+			for (int i = 0; i < extend_filter; i++) {
+				for (int j = 0; j < extend_filter; j++) {
+					for (int z = 0; z < in_size.z; z++) {
 						t(i, j, z) = 1.0f / maxval * rand() / float(RAND_MAX);
+					}
+				}
+			}
 			filters.push_back(t);
 		}
 		for (int i = 0; i < number_filters; i++) {
@@ -102,13 +105,15 @@ public:
 					point_t mapped = map_to_input( { (uint16_t) x, (uint16_t) y,
 							0 }, 0);
 					float sum = 0;
-					for (int i = 0; i < extend_filter; i++)
-						for (int j = 0; j < extend_filter; j++)
+					for (int i = 0; i < extend_filter; i++) {
+						for (int j = 0; j < extend_filter; j++) {
 							for (int z = 0; z < in.getSize().z; z++) {
 								float f = filter_data(i, j, z);
 								float v = in(mapped.x + i, mapped.y + j, z);
 								sum += f * v;
 							}
+						}
+					}
 					out(x, y, filter) = sum;
 				}
 			}
@@ -116,24 +121,30 @@ public:
 	}
 
 	void fix_weights() {
-		for (int a = 0; a < filters.size(); a++)
-			for (int i = 0; i < extend_filter; i++)
-				for (int j = 0; j < extend_filter; j++)
+		for (int a = 0; a < filters.size(); a++) {
+			for (int i = 0; i < extend_filter; i++) {
+				for (int j = 0; j < extend_filter; j++) {
 					for (int z = 0; z < in.getSize().z; z++) {
 						float& w = filters[a].get(i, j, z);
 						gradient_t& grad = filter_grads[a].get(i, j, z);
 						w = update_weight(w, grad);
 						update_gradient(grad);
 					}
+				}
+			}
+		}
 	}
 
 	void calc_grads(tensor_t<float>& grad_next_layer) {
 
 		for (int k = 0; k < filter_grads.size(); k++) {
-			for (int i = 0; i < extend_filter; i++)
-				for (int j = 0; j < extend_filter; j++)
-					for (int z = 0; z < in.getSize().z; z++)
+			for (int i = 0; i < extend_filter; i++) {
+				for (int j = 0; j < extend_filter; j++) {
+					for (int z = 0; z < in.getSize().z; z++) {
 						filter_grads[k].get(i, j, z).grad = 0;
+					}
+				}
+			}
 		}
 
 		for (int x = 0; x < in.getSize().x; x++) {
