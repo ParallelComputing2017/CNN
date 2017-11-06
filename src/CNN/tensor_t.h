@@ -65,6 +65,21 @@ struct tensor_t {
 		return this->get(_x, _y, _z);
 	}
 
+	T& operator==(const tensor_t<T>& other) {
+		assert(
+				size.x == other.size.x && size.y == other.size.y
+						&& size.z == other.size.z);
+
+		for (int i = 0; i < size.x * size.y * size.z; i++) {
+			if (data[i] != other.data[i]) {
+				return false;
+			}
+		}
+
+		return true;
+
+	}
+
 	T& get(int _x, int _y, int _z) {
 		assert(_x >= 0 && _y >= 0 && _z >= 0);
 		assert(_x < size.x && _y < size.y && _z < size.z);

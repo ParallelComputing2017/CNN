@@ -33,14 +33,23 @@ __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	//activate();
 
 	// TODO
-	//printf("before activate");
-	//print_tensor(this->out);
+	/*printf("IN: ");
+	 print_tensor(this->in);
+
+	 // TODO
+	 printf("weights: ");
+	 print_tensor(this->weights);
+
+	 // TODO
+	 printf("before activate: ");
+	 print_tensor(this->out);*/
 
 	activate2cuda(this->in, this->weights, this->input, this->out);
 
 	// TODO
-	//printf("\n after activate: ");
-	//print_tensor(this->out);
+	/*printf("\n after activate: ");
+	 print_tensor(this->out);
+	 exit(EXIT_SUCCESS);*/
 }
 
 /**
@@ -66,27 +75,24 @@ __device__ void set(tensor_t<float> *t, int _x, int _y, int _z, float value) {
 __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 		float *d_input, tensor_t<float> *d_out) {
 
-	int index = (blockDim.x * blockIdx.x) + threadIdx.x;
-
-	//printf("d_input 0: %f \n", *d_input);
-
-	//printf("d_out: %i, %i, %i \n", d_out->size.x, d_out->size.y, d_out->size.z);
-
-	//printf("d_weights: %i, %i, %i \n", d_weights->size.x, d_weights->size.y, d_weights->size.z);
+	int index = threadIdx.x;
 
 	for (int n = 0; n < d_out->size.x; n++) {
 		float inputv = 0;
 
-		for (int i = 0; i < d_in->size.x; i++)
-			for (int j = 0; j < d_in->size.y; j++)
-				for (int z = 0; z < d_in->size.z; z++) {
-					// map
-					int m = z * (d_in->size.x * d_in->size.y)
-							+ j * (d_in->size.x) + i;
+		for (int i = 0; i < d_in->size.x; i++) {
+			for (int j = 0; j < d_in->size.y; j++) {
 
-					inputv += get(d_in, i, j, z) * get(d_weights, m, n, 0);
+				int z = index;
 
-				}
+				// map
+				int m = z * (d_in->size.x * d_in->size.y) + j * (d_in->size.x)
+						+ i;
+
+				inputv += get(d_in, i, j, z) * get(d_weights, m, n, 0);
+
+			}
+		}
 
 		//printf("inputv: %f \n", inputv);
 
@@ -94,8 +100,6 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 
 		set(d_out, n, 0, 0, activator_function(inputv));
 	}
-
-	//printf("d_input 0: %f \n", *d_input);
 
 }
 
@@ -120,7 +124,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	blocksPerGrid = std::min(deviceProp.multiProcessorCount, 1);
 	int cudaCores = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
-	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock, 1);
+	threadsPerBlock = std::min(deviceProp.maxThreadsPerBlock, in.size.z);
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
 	h_in = &in;
@@ -253,7 +257,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	// Lanzar KERNEL
 
-	Logger::debug("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
+	Logger::debug(
+			"CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
 	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
