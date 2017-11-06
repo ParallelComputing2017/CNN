@@ -12,14 +12,15 @@ struct tensor_t {
 
 	tdsize size;
 
-	tensor_t(int _x, int _y, int _z){
+	tensor_t(int _x, int _y, int _z) {
 		data = new T[_x * _y * _z];
 		size.x = _x;
 		size.y = _y;
 		size.z = _z;
 	}
 
-	tensor_t(tdsize size) : size(size){
+	tensor_t(tdsize size) :
+			size(size) {
 
 		data = new T[size.x * size.y * size.z];
 	}
@@ -41,12 +42,7 @@ struct tensor_t {
 	}
 
 	tensor_t<T> operator-(tensor_t<T>& other) {
-		// TODO
-		printf("this: %i, %i, %i \n", this->size.x, this->size.y, this->size.z);
-		print_tensor(*this);
-		printf("other: %i, %i, %i \n", other.size.x, other.size.y,
-				other.size.z);
-		print_tensor(other);
+
 		assert(
 				size.x == other.size.x && size.y == other.size.y
 						&& size.z == other.size.z);

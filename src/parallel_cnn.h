@@ -18,6 +18,8 @@ using namespace std;
 vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 		vector<layer_t*> layers) {
 
+	Logger::info("Start training \n");
+
 	float amse = 0;
 	int ic = 0;
 

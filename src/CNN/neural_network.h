@@ -20,13 +20,16 @@ struct RGB {
 
 float train(vector<layer_t*>& layers, tensor_t<float>& data,
 		tensor_t<float>& expected) {
+
 	for (unsigned i = 0; i < layers.size(); i++) {
+		layer_t* layer = layers[i];
 		if (i == 0) {
 			//activate(layers[i], data);
-			layers[i]->activate(data);
-		} else
+			layer->activate(data);
+		} else{
 			//activate(layers[i], layers[i - 1]->out);
-			layers[i]->activate(layers[i - 1]->out);
+			layer->activate(layers[i - 1]->out);
+		}
 	}
 
 	tensor_t<float> grads = layers.back()->out - expected;
