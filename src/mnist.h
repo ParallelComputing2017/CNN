@@ -60,6 +60,8 @@ vector<case_t> read_training_cases() {
 int singleTest(vector<layer_t*> master) {
 	uint8_t * data = read_file("data/test.ppm");
 
+	Logger::info("Single test \n");
+
 	int digit = -1;
 
 	if (data) {

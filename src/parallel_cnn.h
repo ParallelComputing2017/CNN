@@ -34,8 +34,8 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 			ic++;
 
 			if (ep % 4000 == 0) {
-				// TODO remove
-				//printf("ep: %i,\t i: %i,\t err: %f \n", ep, i, amse / ic);
+
+				//printf("ep: %lu,\t i: %i,\t err: %f \n", ep, i, amse / ic);
 			}
 		}
 	}

@@ -14,18 +14,17 @@
 
 using namespace std;
 
-
 class Logger {
 
 private:
-	static bool const debug_level = false;
+	static bool const debug_level = true;
 	static bool const info_level = true;
 
 	static void write(string format, ...) {
-			va_list args;
-			va_start(args, format);
-			vprintf(format.c_str(), args);
-			va_end(args);
+		va_list args;
+		va_start(args, format);
+		vprintf(format.c_str(), args);
+		va_end(args);
 	}
 
 public:
@@ -34,7 +33,7 @@ public:
 		if (debug_level) {
 			va_list args;
 			va_start(args, format);
-			write(format, args);
+			write("DEBUG \t" + format, args);
 			va_end(args);
 		}
 	}
@@ -44,7 +43,7 @@ public:
 		if (info_level) {
 			va_list args;
 			va_start(args, format);
-			write(format, args);
+			write("INFO \t" + format, args);
 			va_end(args);
 		}
 	}

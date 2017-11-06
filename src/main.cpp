@@ -23,15 +23,13 @@ void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
 
-	int threads = 4;
+	int threads = 3;
 	string self(argv[0]);
-	string mode = "single";
+	string mode = "openmp";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: <mode> <num_threads>\n");
-		printf("\tModes: all, posix, openmp, single, cuda \n");
-		mode = "cuda";
-		threads = 2;
+		printf("\tModes: all, posix, openmp, sequential, cuda \n");
 	} else {
 		mode = argv[1];
 		threads = atoi(argv[2]);
@@ -39,8 +37,7 @@ int main(int argc, char *argv[]) {
 
 	cpu_timer timer;
 
-	printf("Running mode: %s \n", mode.c_str());
-	printf("Using %i threads \n", threads);
+	printf("Running mode: %s-%i \n", mode.c_str(), threads);
 
 	bool all = (mode.compare("all") == 0);
 
@@ -70,7 +67,7 @@ int main(int argc, char *argv[]) {
 		printLog("CUDA", timer, digit);
 
 	}
-	if (mode.compare("single") == 0) {
+	if (mode.compare("sequential") == 0) {
 
 		timer.start();
 		int digit = sequential();

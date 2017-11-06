@@ -22,6 +22,10 @@ public:
 
 	virtual void activate(tensor_t<float>& in) = 0;
 
+	virtual void calc_grads(tensor_t<float>& grad_next_layer) = 0;
+
+	virtual void fix_weights() = 0;
+
 	virtual ~layer_t() = default;
 
 };
