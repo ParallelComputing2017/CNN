@@ -127,9 +127,9 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	int in_mem_size = sizeof(in);
 
 	// TODO remove
-	printf("out[0,0,0]: %f, \n", out.get(0, 0, 0));
+	//printf("out[0,0,0]: %f, \n", out.get(0, 0, 0));
 
-	printf("in: %i, %i, %i \n", in.getSize().x, in.getSize().y, in.getSize().z);
+	//printf("in: %i, %i, %i \n", in.getSize().x, in.getSize().y, in.getSize().z);
 
 	if (h_in == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -148,7 +148,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	long in_data_size = sizeof(*d_in_data) * in.getSize().x * in.getSize().y
 			* in.getSize().z;
 
-	printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
+	//printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
 
 	cudaMalloc((void **) &d_in_data, in_data_size);
 	cudaCheckError("cudaMalloc IN tensor data");
@@ -165,8 +165,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	h_weights = &weights;
 	long weights_mem_size = sizeof(weights);
 
-	printf("sizeof(weights) == weights_mem_size => %lu == %lu \n",
-			sizeof(weights), weights_mem_size);
+	//printf("sizeof(weights) == weights_mem_size => %lu == %lu \n",sizeof(weights), weights_mem_size);
 
 	if (h_weights == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
@@ -201,7 +200,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	h_input = &input[0];
 	long input_mem_size = sizeof(input[0]) * input.size();
 
-	printf("input_mem_size : %lu \n", input_mem_size);
+	//printf("input_mem_size : %lu \n", input_mem_size);
 
 	cudaMalloc((void **) &d_input, input_mem_size);
 	cudaCheckError("cudaMalloc Input array");
@@ -226,7 +225,7 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 	long out_data_size = sizeof(*d_out_data) * h_out->getSize().x
 			* h_out->getSize().y * h_out->getSize().z;
 
-	printf("out_data_size : %lu \n", out_data_size);
+	//printf("out_data_size : %lu \n", out_data_size);
 
 	cudaMalloc((void **) &d_out_data, out_data_size);
 	cudaCheckError("cudaMalloc Out tensor data");
@@ -238,25 +237,23 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 			cudaMemcpyHostToDevice);
 	cudaCheckError("cudaMemcpy Binding pointers of Out tensor data");
 
-	printf("h_out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
+	//printf("h_out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
 	// TODO
 	//printf("Tensor in: \n");
 	//print_tensor(*h_in);
 
 	// TODO remove
-	printf("input size: %lu input 0: %f \n", input.size(), input[0]);
+	//printf("input size: %lu input 0: %f \n", input.size(), input[0]);
 
-	printf("h_input 0: %f \n", *h_input);
+	//printf("h_input 0: %f \n", *h_input);
 
-	printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y,
-			out.getSize().z);
+	//printf("out: %i, %i, %i \n", out.getSize().x, out.getSize().y,out.getSize().z);
 
-	printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,
-			h_out->getSize().z);
+	//printf("h_out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,h_out->getSize().z);
 
 	// Lanzar KERNEL
 
-	printf("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
+	Logger::debug("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
 	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
@@ -288,9 +285,8 @@ void activate2cuda(tensor_t<float> in, tensor_t<float> weights,
 
 	cudaCheckError("cudaDeviceReset");
 	// TODO remove
-	printf("cuda out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,
-			h_out->getSize().z);
-	printf("cuda out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
-	print_tensor(*h_out);
+	//printf("cuda out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,h_out->getSize().z);
+	//printf("cuda out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
+	//print_tensor(*h_out);
 }
 
