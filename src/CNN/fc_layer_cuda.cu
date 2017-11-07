@@ -34,7 +34,7 @@ __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	}
 
 	// TODO
-	exit(EXIT_SUCCESS);
+	//exit(EXIT_SUCCESS);
 
 }
 
@@ -120,7 +120,7 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 /******************************************************************************
  * Host main routine
  */
-float deviceReduce(float *in, float* out, int N) {
+void deviceReduce(float *in, float* out, int N) {
 	int threads = 512;
 	int blocks = min((N + threads - 1) / threads, 1024);
 
@@ -135,7 +135,7 @@ float deviceReduce(float *in, float* out, int N) {
 	cudaCheckError();
 
 	// OUT
-	int out_mem_size = sizeof(int) * 1024;
+	int out_mem_size = sizeof(int) * N;
 	cudaMalloc((void **) &d_out, out_mem_size);
 	cudaCheckError();
 
@@ -156,13 +156,19 @@ float deviceReduce(float *in, float* out, int N) {
 	cudaDeviceSynchronize();
 	cudaCheckError();
 
-	float sum;
-	cudaMemcpy(&sum, d_out, out_mem_size, cudaMemcpyDeviceToHost);
+	cudaMemcpy(out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
 	cudaCheckError();
 
-	Logger::debug("Sum reduce: %f \n", sum);
+	cudaFree(d_in);
+		cudaCheckError();
 
-	return sum;
+	cudaFree(d_out);
+	cudaCheckError();
+
+	cudaDeviceReset();
+	cudaCheckError();
+
+	Logger::debug("Sum2 reduce: %f \n", out[0]);
 
 }
 
@@ -321,11 +327,7 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	//
 
-	float sum = 0.0, sumR = 0.0;
-
-	for (int i = 0; i < requiredThreads; i++) {
-		sum += h_input[i];
-	}
+	float sumR = 0.0;
 
 	float* h_out = (float*) malloc(input_mem_size);
 
@@ -338,13 +340,14 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 		h_out[i] = 0.0;
 	}
 
-	sumR = deviceReduce(h_input, h_out, requiredThreads);
+	deviceReduce(h_input, h_out, requiredThreads);
+	sumR = h_out[0];
 
 	// Free host memory
 	free(h_input);
 
 	Logger::debug("sum: %f == %f \n", sum, sumR);
 
-	return sum;
+	return sumR;
 }
 
