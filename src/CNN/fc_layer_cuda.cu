@@ -18,6 +18,7 @@
 #include "fc_layer_cuda.h"
 
 #include "CUDA/utils.cuh"
+#include "CUDA/tensorCudaWrapper.cuh"
 
 float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n);
 
@@ -129,44 +130,55 @@ void deviceReduce(float *in, float* out, int N) {
 
 	int in_mem_size = sizeof(float) * N;
 	cudaMalloc((void **) &d_in, in_mem_size);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaMemcpy(d_in, in, in_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	// OUT
 	int out_mem_size = sizeof(int) * N;
 	cudaMalloc((void **) &d_out, out_mem_size);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaMemcpy(d_out, out, out_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	int n_mem_size = sizeof(int);
 
 	cudaMalloc((void **) &d_N, n_mem_size);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaMemcpy(d_N, &N, n_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	deviceReduceKernel<<<blocks, threads>>>(d_in, d_out, N);
 	deviceReduceKernel<<<1, 1024>>>(d_out, d_out, blocks);
 
 	cudaDeviceSynchronize();
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaMemcpy(out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaFree(d_in);
-		cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaFree(d_out);
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	cudaDeviceReset();
-	cudaCheckError();
+	cudaCheckError()
+	;
 
 	Logger::debug("Sum2 reduce: %f \n", out[0]);
 
@@ -176,8 +188,6 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	int blocksPerGrid, threadsPerBlock;
 	int totalThreads;
-	tensor_t<float> *h_in, *d_in;
-	tensor_t<float> *h_weights, *d_weights;
 
 	// Get device info
 	int dev = 0;
@@ -194,70 +204,16 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
-	h_in = &in;
-	int in_mem_size = sizeof(in);
+	// IN
+	tensorCudaWrapper inTensor(&in);
 
-	if (h_in == NULL) {
-		fprintf(stderr, "Failed to allocate host vectors!\n");
-		exit(EXIT_FAILURE);
-	}
+	inTensor.toGPU();
 
-	cudaMalloc((void **) &d_in, in_mem_size);
-	//cudaCheckError("cudaMalloc IN tensor");
+	// Weights
 
-	cudaMemcpy(d_in, h_in, in_mem_size, cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcopy to device IN tensor");
+	tensorCudaWrapper weightsTensor(&weights);
 
-	// IN DATA
-
-	float *d_in_data;
-	long in_data_size = sizeof(*d_in_data) * in.getSize().x * in.getSize().y
-			* in.getSize().z;
-
-	//printf("sizeof(in)= %lu , in_data_size = %lu \n", sizeof(in), in_data_size);
-
-	cudaMalloc((void **) &d_in_data, in_data_size);
-	//cudaCheckError("cudaMalloc IN tensor data");
-
-	cudaMemcpy(d_in_data, in.data, in_data_size, cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcpy to device IN tensor data");
-
-	cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
-			cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcpy Binding pointers of IN tensor data");
-
-	// Copy weights
-
-	h_weights = &weights;
-	long weights_mem_size = sizeof(weights);
-
-	if (h_weights == NULL) {
-		fprintf(stderr, "Failed to allocate host vectors!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	cudaMalloc((void **) &d_weights, weights_mem_size);
-	//cudaCheckError("cudaMalloc Weights tensor");
-
-	cudaMemcpy(d_weights, h_weights, weights_mem_size, cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcpy to device Weights tensor");
-
-	// Weights DATA
-
-	float *d_weights_data;
-	long weights_data_size = sizeof(*d_weights_data) * weights.getSize().x
-			* weights.getSize().y * weights.getSize().z;
-
-	cudaMalloc((void **) &d_weights_data, weights_data_size);
-	//cudaCheckError("cudaMalloc Weights tensor data");
-
-	cudaMemcpy(d_weights_data, weights.data, weights_data_size,
-			cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcpy to device Weights tensor data");
-
-	cudaMemcpy(&(d_weights->data), &d_weights_data, sizeof(d_weights->data),
-			cudaMemcpyHostToDevice);
-	//cudaCheckError("cudaMemcpy Binding pointers of Weights tensor data");
+	weightsTensor.toGPU();
 
 	// N
 
@@ -298,8 +254,8 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 			"CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
-	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_n,
-			d_input);
+	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(inTensor.devicePointer(),
+			weightsTensor.devicePointer(), d_n, d_input);
 
 	cudaDeviceSynchronize();
 	//cudaCheckError("Launch kernel");
@@ -310,11 +266,9 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 	//cudaCheckError("cudaMemcpy to host Input array");
 
 	// Free device memory
-	cudaFree(d_in);
-	//cudaCheckError("cudaFree IN tensor");
+	inTensor.free();
 
-	cudaFree(d_weights);
-	//cudaCheckError("cudaFree Weights tensor");
+	weightsTensor.free();
 
 	cudaFree(d_n);
 	//cudaCheckError("cudaFree N value");
@@ -346,7 +300,7 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 	// Free host memory
 	free(h_input);
 
-	Logger::debug("sum: %f == %f \n", sum, sumR);
+	Logger::debug("sum: %f \n", sumR);
 
 	return sumR;
 }
