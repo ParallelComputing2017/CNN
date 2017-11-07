@@ -19,20 +19,19 @@
 
 #include "CUDA/utils.cuh"
 
-void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
-		std::vector<float> &input, tensor_t<float> &out);
-
-__host__ __device__ float activator_function(float x) {
-	//return tanhf( x );
-	float sig = 1.0f / (1.0f + exp(-x));
-	return sig;
-}
+float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n);
 
 __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
 	this->in = in;
-	//activate();
 
-	cudaActivate(this->in, this->weights, this->input, this->out);
+	for (int n = 0; n < out.getSize().x; n++) {
+
+		float inputv = cudaActivate(this->in, this->weights, n);
+
+		input[n] = inputv;
+
+		out(n, 0, 0) = fc_layer_t::activator_function(inputv);
+	}
 
 	// TODO
 	exit(EXIT_SUCCESS);
@@ -44,6 +43,13 @@ __host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
  *
  */
 /*****************************************************************************/
+__device__
+int warpReduceSum(int val) {
+	for (int offset = warpSize / 2; offset > 0; offset /= 2) {
+		val += __shfl_down(val, offset);
+	}
+	return val;
+}
 
 __device__ float& get(tensor_t<float> *t, int _x, int _y, int _z) {
 	assert(_x >= 0 && _y >= 0 && _z >= 0);
@@ -60,7 +66,7 @@ __device__ void set(tensor_t<float> *t, int _x, int _y, int _z, float value) {
 }
 
 __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
-		float *d_input, tensor_t<float> *d_out) {
+		int *d_n, float* d_input) {
 
 	int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 
@@ -68,38 +74,29 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 	int j = ((int) index / d_in->size.z) % d_in->size.y;
 	int k = index % d_in->size.z;
 
-	printf("index: %i  (x, y, z)=(%i, %i, %i)  (i, j, k)=(%i, %i, %i) \n",
-	 index, d_in->size.x, d_in->size.y, d_in->size.z, i, j, k);
+	/*printf("index: %i  (x, y, z)=(%i, %i, %i)  (i, j, k)=(%i, %i, %i) \n",
+	 index, d_in->size.x, d_in->size.y, d_in->size.z, i, j, k);*/
 
-	for (int n = 0; n < d_out->size.x; n++) {
-		float inputv = 0;
+	// map
+	int m = k * (d_in->size.x * d_in->size.y) + j * (d_in->size.x) + i;
 
-		// map
-		int m = k * (d_in->size.x * d_in->size.y) + j * (d_in->size.x) + i;
+	float inputv = get(d_in, i, j, k) * get(d_weights, m, *d_n, 0);
 
-		inputv += get(d_in, i, j, k) * get(d_weights, m, n, 0);
+	//printf("inputv: %f \n", inputv);
 
-		//printf("inputv: %f \n", inputv);
-
-		*(d_input + n) = inputv;
-
-		set(d_out, n, 0, 0, activator_function(inputv));
-	}
+	*(d_input + index) = inputv;
 
 }
 
 /******************************************************************************
  * Host main routine
  */
-void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
-		std::vector<float> &input, tensor_t<float> &out) {
+float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	int blocksPerGrid, threadsPerBlock;
 	int totalThreads;
 	tensor_t<float> *h_in, *d_in;
 	tensor_t<float> *h_weights, *d_weights;
-	float *h_input, *d_input;
-	tensor_t<float> *h_out, *d_out;
 
 	// Get device info
 	int dev = 0;
@@ -153,8 +150,6 @@ void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
 	h_weights = &weights;
 	long weights_mem_size = sizeof(weights);
 
-	//printf("sizeof(weights) == weights_mem_size => %lu == %lu \n",sizeof(weights), weights_mem_size);
-
 	if (h_weights == NULL) {
 		fprintf(stderr, "Failed to allocate host vectors!\n");
 		exit(EXIT_FAILURE);
@@ -183,55 +178,47 @@ void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
 			cudaMemcpyHostToDevice);
 	cudaCheckError("cudaMemcpy Binding pointers of Weights tensor data");
 
-	// Reserve input memory space
+	// N
 
-	h_input = &input[0];
-	long input_mem_size = sizeof(input[0]) * input.size();
+	int* d_n;
+	int* h_n = &n;
+	long n_mem_size = sizeof(int);
 
-	//printf("input_mem_size : %lu \n", input_mem_size);
+	cudaMalloc((void **) &d_n, n_mem_size);
+	cudaCheckError("cudaMalloc N value");
+
+	cudaMemcpy(d_n, h_n, n_mem_size, cudaMemcpyHostToDevice);
+	cudaCheckError("cudaMemcpy to device N value");
+
+	// INPUT array
+
+	long input_mem_size = sizeof(float) * requiredThreads;
+	float* d_input;
+	float* h_input = (float*) malloc(input_mem_size);
+
+	if (h_input == NULL) {
+		fprintf(stderr, "Failed to allocate INPUT vector!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	for (int i = 0; i < requiredThreads; i++) {
+		h_input[i] = 0.0;
+	}
 
 	cudaMalloc((void **) &d_input, input_mem_size);
-	cudaCheckError("cudaMalloc Input array");
+	cudaCheckError("cudaMalloc N value");
 
 	cudaMemcpy(d_input, h_input, input_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError("cudaMemcpy to device Input array");
+	cudaCheckError("cudaMemcpy to device N value");
 
-	// Reserve memory space for OUT
+	// Launch KERNEL
 
-	h_out = &out;
-	int out_mem_size = sizeof(out);
-
-	cudaMalloc((void **) &d_out, out_mem_size);
-	cudaCheckError("cudaMalloc Out tensor");
-
-	cudaMemcpy(d_out, h_out, out_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError("cudaMemcpy to device Out tensor");
-
-	// Out DATA
-
-	float *d_out_data;
-	long out_data_size = sizeof(*d_out_data) * h_out->getSize().x
-			* h_out->getSize().y * h_out->getSize().z;
-
-	//printf("out_data_size : %lu \n", out_data_size);
-
-	cudaMalloc((void **) &d_out_data, out_data_size);
-	cudaCheckError("cudaMalloc Out tensor data");
-
-	cudaMemcpy(d_out_data, h_out->data, out_data_size, cudaMemcpyHostToDevice);
-	cudaCheckError("cudaMemcpy to device Out tensor data");
-
-	cudaMemcpy(&(d_out->data), &d_out_data, sizeof(d_out->data),
-			cudaMemcpyHostToDevice);
-	cudaCheckError("cudaMemcpy Binding pointers of Out tensor data");
-
-	// Lanzar KERNEL
-
-	Logger::debug("CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
+	Logger::debug(
+			"CUDA kernel launch with %d blocks of %d threads. Total: %i\n",
 			blocksPerGrid, threadsPerBlock, totalThreads);
 
-	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_input,
-			d_out);
+	activate_cuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_weights, d_n,
+			d_input);
 
 	cudaDeviceSynchronize();
 
@@ -242,25 +229,35 @@ void cudaActivate(tensor_t<float> in, tensor_t<float> weights,
 	cudaMemcpy(h_input, d_input, input_mem_size, cudaMemcpyDeviceToHost);
 	cudaCheckError("cudaMemcpy to host Input array");
 
+	// Free device memory
+	cudaFree(d_in);
+	cudaCheckError("cudaFree IN tensor");
+
+	cudaFree(d_weights);
+	cudaCheckError("cudaFree Weights tensor");
+
+	cudaFree(d_n);
+	cudaCheckError("cudaFree N value");
+
 	cudaFree(d_input);
 	cudaCheckError("cudaFree Input array");
 
-	// Get Out DATA
+	cudaDeviceReset();
+	cudaCheckError("cudaDeviceReset");
 
-	cudaMemcpy(h_out->data, d_out_data, out_data_size, cudaMemcpyDeviceToHost);
-	cudaCheckError("cudaMemcpy to host Out tensor data");
+	//
 
-	cudaFree(d_out);
-	cudaCheckError("cudaFree Out tensor");
+	float sum = 0.0;
+
+	for (int i = 0; i < requiredThreads; i++) {
+		sum += h_input[i];
+	}
 
 	// Free host memory
+	free(h_input);
 
-	cudaDeviceReset();
+	Logger::debug("sum: %f\n", sum);
 
-	cudaCheckError("cudaDeviceReset");
-	// TODO remove
-	//printf("cuda out: %i, %i, %i \n", h_out->getSize().x, h_out->getSize().y,h_out->getSize().z);
-	//printf("cuda out[0,0,0]: %f, \n", h_out->get(0, 0, 0));
-	//print_tensor(*h_out);
+	return sum;
 }
 
