@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
 	int threads = 3;
 	string self(argv[0]);
-	string mode = "cuda";
+	string mode = "openmp";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: <mode> <num_threads>\n");

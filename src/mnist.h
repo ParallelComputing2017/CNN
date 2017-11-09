@@ -4,8 +4,6 @@
 
 using namespace std;
 
-
-
 uint8_t* read_file(const char* szFile) {
 	ifstream file(szFile, ios::binary | ios::ate);
 	streamsize size = file.tellg();
@@ -52,9 +50,61 @@ vector<case_t> read_training_cases() {
 
 	string trainImages = "data/mnist/train-images.idx3-ubyte";
 	string trainLabels = "data/mnist/train-labels.idx1-ubyte";
-	vector<case_t> cases = read_cases( trainImages,  trainLabels);
+	vector<case_t> cases = read_cases(trainImages, trainLabels);
 
 	return cases;
+}
+
+vector<case_t> readTestCases() {
+
+	string images = "data/mnist/t10k-images.idx3-ubyte";
+	string labels = "data/mnist/t10k-labels.idx1-ubyte";
+	vector<case_t> cases = read_cases(images, labels);
+
+	return cases;
+}
+
+float fullTest(vector<layer_t*>& master) {
+	vector<case_t> cases = readTestCases();
+
+	Logger::info("Full test. Test cases: %lu \n", cases.size());
+
+	case_t &sample = cases.at(1);
+
+	forward(master, sample.data);
+	tensor_t<float> out = master.back()->out - sample.out;
+
+	Logger::debug("Sample: ");
+	// TODO
+	//print_tensor(sample.out);
+
+	Logger::debug("Net: ");
+	// TODO
+	//print_tensor(master.back()->out);
+
+	float accumulativeError = 0.0;
+
+	int classes = sample.out.getSize().x * sample.out.getSize().y
+			* sample.out.getSize().z;
+
+	for (case_t sample : cases) {
+
+		forward(master, sample.data);
+
+		for (int i = 0; i < classes; i++) {
+			float expected = sample.out.get(i, 0, 0);
+			if (expected == 1.0) {
+				accumulativeError += expected - master.back()->out.get(i, 0, 0);
+				break;
+			}
+
+		}
+	}
+	float error = accumulativeError / cases.size();
+
+	Logger::info("Full test. Error: %f \n", error);
+
+	return error;
 }
 
 int singleTest(vector<layer_t*> master) {

@@ -33,7 +33,7 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 			ep++;
 			ic++;
 
-			if (ep % 40 == 0) {
+			if (ep % 4000 == 0) {
 
 				Logger::info("ep: %lu,\t i: %i,\t err: %f \n", ep, i, amse / ic);
 			}
@@ -156,10 +156,14 @@ int openMP(int numThreads) {
 	 singleTest(master);*/
 
 	// Join slaves
-	master = joinSlaves(master, slaves);
+	//master = joinSlaves(master, slaves);
+	// TODO
+	master = slaves[0];
 
 	// TODO remove
 	printf("*** END OF TRAINING *** \n");
+
+	fullTest(master);
 
 	return singleTest(master);
 }
