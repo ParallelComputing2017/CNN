@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <string.h>
+#include <string>
 
 using namespace std;
 
@@ -20,20 +20,13 @@ private:
 	static bool const debug_level = false;
 	static bool const info_level = true;
 
-	static void write(string format, ...) {
-		va_list args;
-		va_start(args, format);
-		vprintf(format.c_str(), args);
-		va_end(args);
-	}
-
 public:
 	static void debug(string format, ...) {
 
 		if (debug_level) {
 			va_list args;
 			va_start(args, format);
-			vprintf(("DEBUG \t" + format).c_str(), args);
+			vprintf(("DEBUG  " + format).c_str(), args);
 			va_end(args);
 		}
 	}
@@ -43,7 +36,7 @@ public:
 		if (info_level) {
 			va_list args;
 			va_start(args, format);
-			vprintf(("INFO \t" + format).c_str(), args);
+			vprintf(("INFO  " + format).c_str(), args);
 			va_end(args);
 		}
 	}

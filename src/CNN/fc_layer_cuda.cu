@@ -2,14 +2,13 @@
 #include <math.h>
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
-#include <helper_cuda.h>
 
 #include <vector>
 #include <algorithm>   // std::min
 
 #include <math.h>
 #include <float.h>
-#include <string.h>
+#include <string>
 
 #include "gradient_t.h"
 #include "layer_t.h"

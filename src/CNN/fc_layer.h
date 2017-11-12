@@ -1,7 +1,7 @@
 #pragma once
 #include <math.h>
 #include <float.h>
-#include <string.h>
+#include <string>
 
 #include "gradient_t.h"
 #include "layer_t.h"

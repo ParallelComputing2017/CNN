@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include <stdint.h>
 
 #include "layer_t.h"
 #include "optimization_method.h"
@@ -92,7 +93,7 @@ public:
 		};
 	}
 
-	void activate(tensor_t<float>& in) {
+	virtual void activate(tensor_t<float>& in) {
 		this->in = in;
 		activate();
 	}
@@ -102,8 +103,7 @@ public:
 			tensor_t<float>& filter_data = filters[filter];
 			for (int x = 0; x < out.getSize().x; x++) {
 				for (int y = 0; y < out.getSize().y; y++) {
-					point_t mapped = map_to_input( { (uint16_t) x, (uint16_t) y,
-							0 }, 0);
+					point_t mapped = map_to_input( { x, y, 0 }, 0);
 					float sum = 0;
 					for (int i = 0; i < extend_filter; i++) {
 						for (int j = 0; j < extend_filter; j++) {

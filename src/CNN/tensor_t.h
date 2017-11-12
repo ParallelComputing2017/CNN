@@ -1,7 +1,7 @@
 #pragma once
 #include <cassert>
 #include <vector>
-#include <string.h>
+#include <string>
 
 #include "point_t.h"
 #include "Common/logger.h"

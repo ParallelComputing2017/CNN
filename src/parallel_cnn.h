@@ -33,7 +33,7 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 			ep++;
 			ic++;
 
-			if (ep % 4000 == 0) {
+			if (ep % 50 == 0) {
 
 				Logger::info("ep: %lu,\t i: %i,\t err: %f \n", ep, i, amse / ic);
 			}
@@ -177,7 +177,7 @@ int cuda(int maxBlocks) {
 
 
 
-	vector<layer_t*> layers = getExampleLayers1Cuda(cases[0].data.getSize());
+	vector<layer_t*> layers = getExampleCuda(cases[0].data.getSize());
 
 	int casesSize = cases.size() - 1-59000;
 
@@ -186,6 +186,8 @@ int cuda(int maxBlocks) {
 	layers = training(cases, 0, casesSize, layers);
 
 	// TEST
+	fullTest(layers);
+
 	return singleTest(layers);
 }
 

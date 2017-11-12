@@ -10,6 +10,8 @@
 #include "byteswap.h"
 #include "cnn.h"
 
+#include "CUDA/cudaConvLayer.h"
+
 using namespace std;
 
 #pragma pack(push, 1)
@@ -83,19 +85,19 @@ vector<layer_t*> getExampleLayers1(tdsize inputSize) {
 /**
  * Get an example layers.
  */
-vector<layer_t*> getExampleLayers1Cuda(tdsize inputSize) {
+vector<layer_t*> getExampleCuda(tdsize inputSize) {
 
 	vector<layer_t*> layers;
 
-	conv_layer_t * layer1 = new conv_layer_t(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
-	relu_layer_t * layer2 = new relu_layer_t(layer1->out.getSize());
+	layer_t * convLayer = new CudaConvLayer(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
+	relu_layer_t * layer2 = new relu_layer_t(convLayer->out.getSize());
 	pool_layer_t * layer3 = new pool_layer_t(2, 2, layer2->out.getSize()); // 24 * 24 * 8 -> 12 * 12 * 8
-	fc_layer_cuda_t * layer4 = new fc_layer_cuda_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10
+	layer_t * fcLayer = new fc_layer_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10
 
-	layers.push_back((layer_t*) layer1);
+	layers.push_back((layer_t*) convLayer);
 	layers.push_back((layer_t*) layer2);
 	layers.push_back((layer_t*) layer3);
-	layers.push_back((layer_t*) layer4);
+	layers.push_back((layer_t*) fcLayer);
 
 	return layers;
 }
