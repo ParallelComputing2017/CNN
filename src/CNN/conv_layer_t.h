@@ -1,6 +1,5 @@
 #pragma once
 #include <math.h>
-#include <stdint.h>
 
 #include "layer_t.h"
 #include "optimization_method.h"
@@ -105,8 +104,8 @@ public:
 				for (int y = 0; y < out.getSize().y; y++) {
 					point_t mapped = map_to_input( { x, y, 0 }, 0);
 					float sum = 0;
-					for (int i = 0; i < extend_filter; i++) {
-						for (int j = 0; j < extend_filter; j++) {
+					for (int i = 0; i < filter_data.size.x; i++) {
+						for (int j = 0; j < filter_data.size.y; j++) {
 							for (int z = 0; z < in.getSize().z; z++) {
 								float f = filter_data(i, j, z);
 								float v = in(mapped.x + i, mapped.y + j, z);

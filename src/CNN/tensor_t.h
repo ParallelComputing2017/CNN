@@ -87,6 +87,13 @@ struct tensor_t {
 		return data[_z * (size.x * size.y) + _y * (size.x) + _x];
 	}
 
+	void set(T value, int x, int y, int z) {
+		assert(x >= 0 && y >= 0 && z >= 0);
+		assert(x < size.x && y < size.y && z < size.z);
+
+		data[z * (size.x * size.y) + y * (size.x) + x] = value;
+	}
+
 	void copy_from(std::vector<std::vector<std::vector<T>>>data )
 	{
 		int z = data.size();
