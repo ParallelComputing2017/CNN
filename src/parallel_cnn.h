@@ -186,7 +186,7 @@ int cuda(int maxBlocks) {
 	layers = training(cases, 0, casesSize, layers);
 
 	// TEST
-	fullTest(layers);
+	//fullTest(layers);
 
 	return singleTest(layers);
 }

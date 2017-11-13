@@ -17,7 +17,7 @@
 #include "fc_layer_cuda.h"
 
 #include "CUDA/utils.cuh"
-#include "CUDA/tensorCudaWrapper.cuh"
+#include "CUDA/cudaTensor.cuh"
 
 float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n);
 
@@ -80,20 +80,6 @@ __global__ void deviceReduceKernel(float *in, float* out, int N) {
 		out[blockIdx.x] = sum;
 }
 
-__device__ float& get(tensor_t<float> *t, int _x, int _y, int _z) {
-	assert(_x >= 0 && _y >= 0 && _z >= 0);
-	assert(_x < t->size.x && _y < t->size.y && _z < t->size.z);
-
-	return t->data[_z * (t->size.x * t->size.y) + _y * (t->size.x) + _x];
-}
-
-__device__ void set(tensor_t<float> *t, int _x, int _y, int _z, float value) {
-	assert(_x >= 0 && _y >= 0 && _z >= 0);
-	assert(_x < t->size.x && _y < t->size.y && _z < t->size.z);
-
-	t->data[_z * (t->size.x * t->size.y) + _y * (t->size.x) + _x] = value;
-}
-
 __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 		int *d_n, float* d_input) {
 
@@ -109,7 +95,7 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 	// map
 	int m = k * (d_in->size.x * d_in->size.y) + j * (d_in->size.x) + i;
 
-	float inputv = get(d_in, i, j, k) * get(d_weights, m, *d_n, 0);
+	float inputv = cudaTensor::get(d_in, i, j, k) * cudaTensor::get(d_weights, m, *d_n, 0);
 
 	//printf("inputv: %f \n", inputv);
 
@@ -204,15 +190,15 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 	totalThreads = blocksPerGrid * threadsPerBlock;
 
 	// IN
-	tensorCudaWrapper inTensor(&in);
+	cudaTensor inTensor(&in);
 
-	inTensor.toGPU();
+	inTensor.hostToDevice();
 
 	// Weights
 
-	tensorCudaWrapper weightsTensor(&weights);
+	cudaTensor weightsTensor(&weights);
 
-	weightsTensor.toGPU();
+	weightsTensor.hostToDevice();
 
 	// N
 
@@ -265,9 +251,9 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 	//cudaCheckError("cudaMemcpy to host Input array");
 
 	// Free device memory
-	inTensor.free();
+	inTensor.deviceFree();
 
-	weightsTensor.free();
+	weightsTensor.deviceFree();
 
 	cudaFree(d_n);
 	//cudaCheckError("cudaFree N value");
