@@ -8,7 +8,8 @@
 #ifndef FC_LAYER_CUDA_H_
 #define FC_LAYER_CUDA_H_
 
-#include "fc_layer.h"
+#include "../fc_layer.h"
+
 
 class fc_layer_cuda_t: public fc_layer_t {
 

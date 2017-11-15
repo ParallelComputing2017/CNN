@@ -10,14 +10,10 @@
 #include <float.h>
 #include <string>
 
-#include "gradient_t.h"
-#include "layer_t.h"
-#include "optimization_method.h"
-
 #include "fc_layer_cuda.h"
 
-#include "CUDA/utils.cuh"
-#include "CUDA/cudaTensor.cuh"
+#include "utils.cuh"
+#include "cudaTensor.cuh"
 
 float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n);
 
