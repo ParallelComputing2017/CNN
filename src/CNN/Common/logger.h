@@ -26,7 +26,7 @@ public:
 		if (debug_level) {
 			va_list args;
 			va_start(args, format);
-			vprintf(("DEBUG  " + format).c_str(), args);
+			vprintf(("DEBUG  " + format + "\n").c_str(), args);
 			va_end(args);
 		}
 	}
@@ -36,7 +36,7 @@ public:
 		if (info_level) {
 			va_list args;
 			va_start(args, format);
-			vprintf(("INFO  " + format).c_str(), args);
+			vprintf(("INFO  " + format + "\n").c_str(), args);
 			va_end(args);
 		}
 	}

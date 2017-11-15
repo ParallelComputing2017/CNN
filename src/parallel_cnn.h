@@ -18,24 +18,22 @@ using namespace std;
 vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 		vector<layer_t*> layers) {
 
-	Logger::info("Start training \n");
+	Logger::info("Start training");
 
 	float amse = 0;
 	int ic = 0;
 
-	for (long ep = 0; ep < 1;) {
+	for (long ep = 0; ep < 1; ep++) {
 
 		for (int i = batchStart; i < batchEnd; i++) {
 			case_t& t = cases.at(i);
 			float xerr = train(layers, t.data, t.out);
 			amse += xerr;
 
-			ep++;
 			ic++;
 
-			if (ep % 50 == 0) {
-
-				Logger::info("ep: %lu,\t i: %i,\t err: %f \n", ep, i, amse / ic);
+			if (i % 50 == 0) {
+				Logger::info("epoch: %lu  iter: %i  err: %f", ep, i, amse / ic);
 			}
 		}
 	}
