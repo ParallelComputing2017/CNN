@@ -10,14 +10,14 @@
 #include <float.h>
 #include <string>
 
-#include "fc_layer_cuda.h"
+#include "cudaFCLayer.h"
 
 #include "utils.cuh"
 #include "cudaTensor.cuh"
 
 float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n);
 
-__host__ void fc_layer_cuda_t::activate(tensor_t<float>& in) {
+__host__ void cudaFCLayer::activate(tensor_t<float>& in) {
 	this->in = in;
 
 	for (int n = 0; n < out.getSize().x; n++) {
@@ -65,15 +65,16 @@ __device__ float blockReduceSum(float val) {
 	return val;
 }
 
-__global__ void deviceReduceKernel(float *in, float* out, int N) {
+__global__ void deviceSumReduceKernel(float *in, float* out, int N) {
 	float sum = float(0);
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N;
 			i += blockDim.x * gridDim.x) {
 		sum += in[i];
 	}
 	sum = blockReduceSum(sum);
-	if (threadIdx.x == 0)
+	if (threadIdx.x == 0){
 		out[blockIdx.x] = sum;
+	}
 }
 
 __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
@@ -133,8 +134,8 @@ void deviceReduce(float *in, float* out, int N) {
 	cudaMemcpy(d_N, &N, n_mem_size, cudaMemcpyHostToDevice);
 	cudaCheckError()
 
-	deviceReduceKernel<<<blocks, threads>>>(d_in, d_out, N);
-	deviceReduceKernel<<<1, 1024>>>(d_out, d_out, blocks);
+	deviceSumReduceKernel<<<blocks, threads>>>(d_in, d_out, N);
+	deviceSumReduceKernel<<<1, 1024>>>(d_out, d_out, blocks);
 
 	cudaDeviceSynchronize();
 	cudaCheckError()
