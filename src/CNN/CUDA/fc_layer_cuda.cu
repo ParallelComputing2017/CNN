@@ -91,7 +91,8 @@ __global__ void activate_cuda(tensor_t<float> *d_in, tensor_t<float> *d_weights,
 	// map
 	int m = k * (d_in->size.x * d_in->size.y) + j * (d_in->size.x) + i;
 
-	float inputv = cudaTensor::get(d_in, i, j, k) * cudaTensor::get(d_weights, m, *d_n, 0);
+	float inputv = cudaTensor::get(d_in, i, j, k)
+			* cudaTensor::get(d_weights, m, *d_n, 0);
 
 	//printf("inputv: %f \n", inputv);
 
@@ -112,54 +113,43 @@ void deviceReduce(float *in, float* out, int N) {
 	int in_mem_size = sizeof(float) * N;
 	cudaMalloc((void **) &d_in, in_mem_size);
 	cudaCheckError()
-	;
 
 	cudaMemcpy(d_in, in, in_mem_size, cudaMemcpyHostToDevice);
 	cudaCheckError()
-	;
 
-	// OUT
+		// OUT
 	int out_mem_size = sizeof(int) * N;
 	cudaMalloc((void **) &d_out, out_mem_size);
 	cudaCheckError()
-	;
 
 	cudaMemcpy(d_out, out, out_mem_size, cudaMemcpyHostToDevice);
 	cudaCheckError()
-	;
 
 	int n_mem_size = sizeof(int);
 
 	cudaMalloc((void **) &d_N, n_mem_size);
 	cudaCheckError()
-	;
 
 	cudaMemcpy(d_N, &N, n_mem_size, cudaMemcpyHostToDevice);
 	cudaCheckError()
-	;
 
 	deviceReduceKernel<<<blocks, threads>>>(d_in, d_out, N);
 	deviceReduceKernel<<<1, 1024>>>(d_out, d_out, blocks);
 
 	cudaDeviceSynchronize();
 	cudaCheckError()
-	;
 
 	cudaMemcpy(out, d_out, out_mem_size, cudaMemcpyDeviceToHost);
 	cudaCheckError()
-	;
 
 	cudaFree(d_in);
 	cudaCheckError()
-	;
 
 	cudaFree(d_out);
 	cudaCheckError()
-	;
 
 	cudaDeviceReset();
 	cudaCheckError()
-	;
 
 	Logger::debug("Sum2 reduce: %f \n", out[0]);
 
@@ -203,7 +193,7 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 	long n_mem_size = sizeof(int);
 
 	cudaMalloc((void **) &d_n, n_mem_size);
-	//cudaCheckError("cudaMalloc N value");
+	cudaCheckError()
 
 	cudaMemcpy(d_n, h_n, n_mem_size, cudaMemcpyHostToDevice);
 	//cudaCheckError("cudaMemcpy to device N value");
@@ -216,7 +206,7 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	if (h_input == NULL) {
 		fprintf(stderr, "Failed to allocate INPUT vector!\n");
-		exit(EXIT_FAILURE);
+		exit (EXIT_FAILURE);
 	}
 
 	for (int i = 0; i < requiredThreads; i++) {
@@ -268,7 +258,7 @@ float cudaActivate(tensor_t<float> in, tensor_t<float> weights, int n) {
 
 	if (h_out == NULL) {
 		fprintf(stderr, "Failed to allocate INPUT vector!\n");
-		exit(EXIT_FAILURE);
+		exit (EXIT_FAILURE);
 	}
 
 	for (int i = 0; i < requiredThreads; i++) {

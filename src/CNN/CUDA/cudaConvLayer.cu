@@ -8,6 +8,8 @@
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <cuda_runtime.h>
 
+#include <math.h>
+
 #include "cudaConvLayer.h"
 #include "cudaTensor.cuh"
 
@@ -45,6 +47,18 @@ __global__ void convolutionKernel(tensor_t<float> *in, tensor_t<float> *kernel,
 
 }
 
+void threadCalculator(const int &requiredThreads, cudaDeviceProp &deviceProp, int &blocksPerGrid, int &threadsPerBlock){
+	// calc the threads per block value
+	threadsPerBlock = ceil(requiredThreads / blocksPerGrid);
+
+	// If the value exess the max, then fixed
+	if(threadsPerBlock > blocksPerGrid*deviceProp.maxThreadsPerBlock){
+		blocksPerGrid = ceil(threadsPerBlock/deviceProp.maxThreadsPerBlock);
+		threadsPerBlock = ceil(threadsPerBlock/blocksPerGrid);
+	}
+}
+
+
 void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 		int *filterIdx, int *stride, tensor_t<float> *out) {
 
@@ -54,14 +68,20 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
-	int xThreads = std::max(out->size.x, 32);
-	int yThreads = std::max(out->size.y, 32);
+	int xThreads = out->size.x;
+	int yThreads = out->size.y;
+
+	int xblocks = 1;
+	int yblocks = 1;
+
+	threadCalculator(out->size.x, deviceProp,  xblocks, xThreads);
+	threadCalculator(out->size.y, deviceProp,  yblocks, yThreads);
 
 	Logger::debug("Convolution, required threads: %i", xThreads);
 	Logger::debug("Multiprocessors: %i", deviceProp.multiProcessorCount);
 	Logger::debug("Max threads per block: %i", deviceProp.maxThreadsPerBlock);
 
-	dim3 blocksPerGrid(1, 1, 1);
+	dim3 blocksPerGrid(xblocks, yblocks, 1);
 	dim3 threadsPerBlock(xThreads, yThreads, 1);
 
 	// IN
@@ -102,13 +122,14 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 
 		// Launch KERNEL
 
-	Logger::debug("CUDA kernel launch with %d blocks of %d threads",
-			blocksPerGrid.x * blocksPerGrid.y * blocksPerGrid.z,
-			threadsPerBlock.x * threadsPerBlock.y * threadsPerBlock.z);
+	Logger::debug("CUDA kernel launch with (%d, %d, %d) blocks of (%d, %d, %d) threads",
+			blocksPerGrid.x , blocksPerGrid.y , blocksPerGrid.z,
+			threadsPerBlock.x , threadsPerBlock.y , threadsPerBlock.z);
 
 	convolutionKernel<<<blocksPerGrid, threadsPerBlock>>>(
 			inTensor.devicePointer(), kernelTensor.devicePointer(), d_filter,
 			d_stride, outTensor.devicePointer());
+	cudaCheckError()
 
 	cudaDeviceSynchronize();
 	cudaCheckError()
@@ -133,6 +154,9 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 	cudaCheckError()
 
 		// Free host memory
+
+	//
+	print_tensor(*out);
 }
 
 void CudaConvLayer::activate(tensor_t<float>& in) {
@@ -151,7 +175,7 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 		cudaConvolution(pIn, kernel, pFilter, pStride, pOut);
 
 		// TODO
-		//exit (EXIT_SUCCESS);
+		exit (EXIT_SUCCESS);
 	}
 }
 

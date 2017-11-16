@@ -32,7 +32,7 @@
 									<listOptionValue builtIn="false" value="-fopenmp"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.1342048480" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.include.paths.2109650247" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath"/>
+								<option id="nvcc.compiler.include.paths.2109650247" name="Include paths (-I)" superClass="nvcc.compiler.include.paths"/>
 								<option id="nvcc.compiler.option.lineinfo.1206928233" name="Generate line-number information for device code (-lineinfo)" superClass="nvcc.compiler.option.lineinfo" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.160400137" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1966404900" superClass="nvcc.compiler.input.cpp"/>
@@ -63,11 +63,11 @@
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
-				<executable devicelink="false">
-					<sass major="3" minor="0"/>
-					<ptx major="3" minor="0"/>
+				<executable devicelink="true">
+					<ptx major="5" minor="0"/>
+					<sass major="5" minor="0"/>
 				</executable>
-				<editor-arch major="3" minor="0"/>
+				<editor-arch major="5" minor="0"/>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
@@ -97,7 +97,7 @@
 								<option id="nvcc.compiler.option.level.1189435280" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level"/>
 								<option defaultValue="nvcc.compiler.optimization.level.most" id="nvcc.compiler.optimization.level.864882701" name="Optimization Level" superClass="nvcc.compiler.optimization.level" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.437845727" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
-								<option id="nvcc.compiler.include.paths.1087424459" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath"/>
+								<option id="nvcc.compiler.include.paths.1087424459" name="Include paths (-I)" superClass="nvcc.compiler.include.paths"/>
 								<option id="nvcc.compiler.cpp11option.1899973309" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.compileroptions.1444793810" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
 									<listOptionValue builtIn="false" value="-pthread"/>
@@ -128,11 +128,11 @@
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
-				<executable devicelink="false">
-					<sass major="3" minor="0"/>
-					<ptx major="3" minor="0"/>
+				<executable devicelink="true">
+					<ptx major="5" minor="0"/>
+					<sass major="5" minor="0"/>
 				</executable>
-				<editor-arch major="3" minor="0"/>
+				<editor-arch major="5" minor="0"/>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
