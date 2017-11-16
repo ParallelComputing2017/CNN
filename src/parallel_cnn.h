@@ -15,6 +15,7 @@
 
 using namespace std;
 
+
 vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 		vector<layer_t*> layers) {
 
@@ -173,11 +174,9 @@ int cuda(int maxBlocks) {
 
 	vector<case_t> cases = read_training_cases();
 
-
-
 	vector<layer_t*> layers = getExampleCuda(cases[0].data.getSize());
 
-	int casesSize = cases.size() - 1-59000;
+	int casesSize = cases.size() - 1-59900;
 
 	printf("Training cases: %i \n", casesSize);
 

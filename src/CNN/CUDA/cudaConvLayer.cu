@@ -71,8 +71,8 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 	int xThreads = out->size.x;
 	int yThreads = out->size.y;
 
-	int xblocks = 1;
-	int yblocks = 1;
+	int xblocks = 7;
+	int yblocks = 4;
 
 	threadCalculator(out->size.x, deviceProp,  xblocks, xThreads);
 	threadCalculator(out->size.y, deviceProp,  yblocks, yThreads);
@@ -155,8 +155,8 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 
 		// Free host memory
 
-	//
-	print_tensor(*out);
+	// TODO
+	//print_tensor(*out);
 }
 
 void CudaConvLayer::activate(tensor_t<float>& in) {
@@ -175,7 +175,7 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 		cudaConvolution(pIn, kernel, pFilter, pStride, pOut);
 
 		// TODO
-		exit (EXIT_SUCCESS);
+		//exit (EXIT_SUCCESS);
 	}
 }
 

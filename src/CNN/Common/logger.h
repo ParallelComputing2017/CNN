@@ -17,7 +17,7 @@ using namespace std;
 class Logger {
 
 private:
-	static bool const debug_level = true;
+	static bool const debug_level = false;
 	static bool const info_level = true;
 
 public:
