@@ -176,7 +176,7 @@ int cuda(int maxBlocks) {
 
 	vector<layer_t*> layers = getExampleCuda(cases[0].data.getSize());
 
-	int casesSize = cases.size() - 1-59900;
+	int casesSize = cases.size() - 59750;
 
 	printf("Training cases: %i \n", casesSize);
 
@@ -207,6 +207,8 @@ void *training(void *threadarg) {
 	vector<layer_t*> layers = my_data.slaves;
 
 	training(cases, batchStart, batchEnd, layers);
+
+	return 0;
 
 }
 

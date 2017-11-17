@@ -20,7 +20,7 @@ __device__ point_t map_to_input(int stride, point_t out, int z) {
 	return out;
 }
 
-__global__ void convolutionKernel(tensor_t<float> *in,
+__global__ void activationKernel(tensor_t<float> *in,
 		tensor_t<float> **filters, int *stride, tensor_t<float> *out) {
 
 	int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -34,9 +34,6 @@ __global__ void convolutionKernel(tensor_t<float> *in,
 		float sum = 0;
 
 		tensor_t<float> *kernel = filters[filterIdx];
-
-		/*printf("(%i, %i, %i)  kernel (%i, %i, %i)\n", x, y, filterIdx,
-				kernel->size.x, kernel->size.y, kernel->size.z);*/
 
 		for (int i = 0; i < kernel->size.x; i++) {
 			for (int j = 0; j < kernel->size.y; j++) {
@@ -58,12 +55,12 @@ __global__ void convolutionKernel(tensor_t<float> *in,
 void threadCalculator(const int &requiredThreads, cudaDeviceProp &deviceProp,
 		int &blocksPerGrid, int &threadsPerBlock) {
 	// calc the threads per block value
-	threadsPerBlock = ceil(requiredThreads / blocksPerGrid);
+	threadsPerBlock = ceil((float)requiredThreads / blocksPerGrid);
 
 	// If the value exess the max, then fixed
 	if (threadsPerBlock > blocksPerGrid * deviceProp.maxThreadsPerBlock) {
-		blocksPerGrid = ceil(threadsPerBlock / deviceProp.maxThreadsPerBlock);
-		threadsPerBlock = ceil(threadsPerBlock / blocksPerGrid);
+		blocksPerGrid = ceil((float)threadsPerBlock / deviceProp.maxThreadsPerBlock);
+		threadsPerBlock = ceil((float)threadsPerBlock / blocksPerGrid);
 	}
 }
 
@@ -81,8 +78,8 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 	int yThreads = out.size.y;
 	int zThreads = filters.size();
 
-	int xblocks = 3;
-	int yblocks = 2;
+	int xblocks = 7;
+	int yblocks = 4;
 	int zblocks = 1;
 
 	threadCalculator(out.size.x, deviceProp, xblocks, xThreads);
@@ -119,6 +116,7 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 		cudaTensor kernelTensor(&filters[k]);
 		kernelTensor.hostToDevice();
 
+		// cudaMemcpy needs a host pointer
 		tensor_t<float> *d_kernel = kernelTensor.devicePointer();
 		cudaMemcpy(&(d_filters[k]), &d_kernel,
 				sizeof(d_filters[k]), cudaMemcpyHostToDevice);
@@ -144,7 +142,7 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 			blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z,
 			threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z);
 
-	convolutionKernel<<<blocksPerGrid, threadsPerBlock>>>(
+	activationKernel<<<blocksPerGrid, threadsPerBlock>>>(
 			inTensor.devicePointer(), d_filters, d_stride,
 			outTensor.devicePointer());
 	cudaCheckError()
@@ -172,9 +170,9 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 		// Free host memory
 
 		// TODO
-		print_tensor(out);
+		//print_tensor(out);
 
 		// TODO
-	exit (EXIT_SUCCESS);
+	//exit (EXIT_SUCCESS);
 }
 

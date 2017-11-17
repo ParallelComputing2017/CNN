@@ -13,10 +13,9 @@
 class cudaTensor {
 
 private:
-	tensor_t<float> *tensor;
-	tensor_t<float> *h_in, *d_in;
-	float *d_in_data;
-	int in_data_size;
+	tensor_t<float> *h_tensor, *d_tensor;
+	float *d_tensor_data;
+	int tensor_data_size;
 
 public:
 
@@ -36,60 +35,61 @@ public:
 	}
 
 	cudaTensor(tensor_t<float> *tensor) :
-			tensor(tensor), in_data_size(0) {
+			h_tensor(tensor), tensor_data_size(0), d_tensor(NULL), d_tensor_data(
+					NULL) {
 	}
 
 	void hostToDevice() {
-		h_in = tensor;
 
-		int in_mem_size = sizeof(*tensor);
+		int tensor_mem_size = sizeof(*h_tensor);
 
-		if (h_in == NULL) {
+		if (h_tensor == NULL) {
 			fprintf(stderr, "Failed to allocate host vectors!\n");
 			exit (EXIT_FAILURE);
 		}
 
-		cudaMalloc((void **) &d_in, in_mem_size);
+		cudaMalloc((void **) &d_tensor, tensor_mem_size);
 		cudaCheckError()
 
-		cudaMemcpy(d_in, h_in, in_mem_size, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_tensor, h_tensor, tensor_mem_size, cudaMemcpyHostToDevice);
 		cudaCheckError()
 
 			// DATA
-		in_data_size = sizeof(float) * tensor->getSize().x * tensor->getSize().y
-				* tensor->getSize().z;
+		tensor_data_size = sizeof(float) * h_tensor->getSize().x
+				* h_tensor->getSize().y * h_tensor->getSize().z;
 
-		cudaMalloc((void **) &d_in_data, in_data_size);
+		cudaMalloc((void **) &d_tensor_data, tensor_data_size);
 		cudaCheckError()
 
 			// Copy data to device
-		cudaMemcpy(d_in_data, tensor->data, in_data_size,
+		cudaMemcpy(d_tensor_data, h_tensor->data, tensor_data_size,
 				cudaMemcpyHostToDevice);
 		cudaCheckError()
 
 			// Copy pointer
-		cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
+		cudaMemcpy(&(d_tensor->data), &d_tensor_data, sizeof(d_tensor->data),
 				cudaMemcpyHostToDevice);
 		cudaCheckError()
 
 	}
 
 	tensor_t<float>* devicePointer() {
-		return d_in;
+		return d_tensor;
 	}
 	tensor_t<float>* hostPointer() {
-		return h_in;
+		return h_tensor;
 	}
 
 	void deviceToHost() {
-		cudaMemcpy(h_in->data, d_in_data, in_data_size, cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_tensor->data, d_tensor_data, tensor_data_size,
+				cudaMemcpyDeviceToHost);
 		cudaCheckError()
-		;
+
 	}
 
 	void deviceFree() {
-		cudaFree(d_in);
+		cudaFree(d_tensor);
 		cudaCheckError()
-		;
+
 	}
 };
