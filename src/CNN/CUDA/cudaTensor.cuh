@@ -27,7 +27,8 @@ public:
 		return t->data[_z * (t->size.x * t->size.y) + _y * (t->size.x) + _x];
 	}
 
-	__device__ static void set(tensor_t<float> *t, int _x, int _y, int _z, float value) {
+	__device__ static void set(tensor_t<float> *t, int _x, int _y, int _z,
+			float value) {
 		assert(_x >= 0 && _y >= 0 && _z >= 0);
 		assert(_x < t->size.x && _y < t->size.y && _z < t->size.z);
 
@@ -49,38 +50,46 @@ public:
 		}
 
 		cudaMalloc((void **) &d_in, in_mem_size);
-		cudaCheckError();
+		cudaCheckError()
 
 		cudaMemcpy(d_in, h_in, in_mem_size, cudaMemcpyHostToDevice);
-		cudaCheckError();
+		cudaCheckError()
 
-		// DATA
-		in_data_size = sizeof(*d_in_data) * tensor->getSize().x
-				* tensor->getSize().y * tensor->getSize().z;
+			// DATA
+		in_data_size = sizeof(float) * tensor->getSize().x * tensor->getSize().y
+				* tensor->getSize().z;
 
 		cudaMalloc((void **) &d_in_data, in_data_size);
-		cudaCheckError();
+		cudaCheckError()
 
+			// Copy data to device
 		cudaMemcpy(d_in_data, tensor->data, in_data_size,
 				cudaMemcpyHostToDevice);
-		cudaCheckError();
+		cudaCheckError()
 
+			// Copy pointer
 		cudaMemcpy(&(d_in->data), &d_in_data, sizeof(d_in->data),
 				cudaMemcpyHostToDevice);
-		cudaCheckError();
+		cudaCheckError()
+
 	}
 
-	tensor_t<float>* devicePointer(){
+	tensor_t<float>* devicePointer() {
 		return d_in;
+	}
+	tensor_t<float>* hostPointer() {
+		return h_in;
 	}
 
 	void deviceToHost() {
 		cudaMemcpy(h_in->data, d_in_data, in_data_size, cudaMemcpyDeviceToHost);
-		cudaCheckError();
+		cudaCheckError()
+		;
 	}
 
 	void deviceFree() {
 		cudaFree(d_in);
-		cudaCheckError();
+		cudaCheckError()
+		;
 	}
 };

@@ -20,20 +20,28 @@ __device__ point_t map_to_input(int stride, point_t out, int z) {
 	return out;
 }
 
-__global__ void convolutionKernel(tensor_t<float> *in, tensor_t<float> *kernel,
-		int *filterIdx, int *stride, tensor_t<float> *out) {
+__global__ void convolutionKernel(tensor_t<float> *in,
+		tensor_t<float> **filters, int *stride, tensor_t<float> *out) {
 
 	int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	int filterIdx = (blockIdx.z * blockDim.z) + threadIdx.z;
 
 	if (x < out->size.x && y < out->size.y) {
 
 		point_t p_out = (point_t ) { x, y, 0 };
 		point_t mapped = map_to_input((*stride), p_out, 0);
 		float sum = 0;
+
+		tensor_t<float> *kernel = filters[filterIdx];
+
+		/*printf("(%i, %i, %i)  kernel (%i, %i, %i)\n", x, y, filterIdx,
+				kernel->size.x, kernel->size.y, kernel->size.z);*/
+
 		for (int i = 0; i < kernel->size.x; i++) {
 			for (int j = 0; j < kernel->size.y; j++) {
 				for (int z = 0; z < in->size.z; z++) {
+
 					float f = cudaTensor::get(kernel, i, j, z);
 					float v = cudaTensor::get(in, mapped.x + i, mapped.y + j,
 							z);
@@ -41,26 +49,27 @@ __global__ void convolutionKernel(tensor_t<float> *in, tensor_t<float> *kernel,
 				}
 			}
 		}
-		cudaTensor::set(out, x, y, *filterIdx, sum);
+		cudaTensor::set(out, x, y, filterIdx, sum);
 
 	}
 
 }
 
-void threadCalculator(const int &requiredThreads, cudaDeviceProp &deviceProp, int &blocksPerGrid, int &threadsPerBlock){
+void threadCalculator(const int &requiredThreads, cudaDeviceProp &deviceProp,
+		int &blocksPerGrid, int &threadsPerBlock) {
 	// calc the threads per block value
 	threadsPerBlock = ceil(requiredThreads / blocksPerGrid);
 
 	// If the value exess the max, then fixed
-	if(threadsPerBlock > blocksPerGrid*deviceProp.maxThreadsPerBlock){
-		blocksPerGrid = ceil(threadsPerBlock/deviceProp.maxThreadsPerBlock);
-		threadsPerBlock = ceil(threadsPerBlock/blocksPerGrid);
+	if (threadsPerBlock > blocksPerGrid * deviceProp.maxThreadsPerBlock) {
+		blocksPerGrid = ceil(threadsPerBlock / deviceProp.maxThreadsPerBlock);
+		threadsPerBlock = ceil(threadsPerBlock / blocksPerGrid);
 	}
 }
 
+void CudaConvLayer::activate(tensor_t<float>& in) {
 
-void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
-		int *filterIdx, int *stride, tensor_t<float> *out) {
+	this->in = in;
 
 	// Get device info
 	int dev = 0;
@@ -68,67 +77,76 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, dev);
 
-	int xThreads = out->size.x;
-	int yThreads = out->size.y;
+	int xThreads = out.size.x;
+	int yThreads = out.size.y;
+	int zThreads = filters.size();
 
-	int xblocks = 7;
-	int yblocks = 4;
+	int xblocks = 3;
+	int yblocks = 2;
+	int zblocks = 1;
 
-	threadCalculator(out->size.x, deviceProp,  xblocks, xThreads);
-	threadCalculator(out->size.y, deviceProp,  yblocks, yThreads);
+	threadCalculator(out.size.x, deviceProp, xblocks, xThreads);
+	threadCalculator(out.size.y, deviceProp, yblocks, yThreads);
+	threadCalculator(filters.size(), deviceProp, zblocks, zThreads);
 
 	Logger::debug("Convolution, required threads: %i", xThreads);
 	Logger::debug("Multiprocessors: %i", deviceProp.multiProcessorCount);
 	Logger::debug("Max threads per block: %i", deviceProp.maxThreadsPerBlock);
 
-	dim3 blocksPerGrid(xblocks, yblocks, 1);
-	dim3 threadsPerBlock(xThreads, yThreads, 1);
+	dim3 blocksPerGrid(xblocks, yblocks, zblocks);
+	dim3 threadsPerBlock(xThreads, yThreads, zThreads);
 
 	// IN
 
-	cudaTensor inTensor(in);
+	cudaTensor inTensor(&in);
 	inTensor.hostToDevice();
-
-	// Kernel
-	cudaTensor kernelTensor(kernel);
-	kernelTensor.hostToDevice();
 
 	// Out
 
-	cudaTensor outTensor(out);
+	cudaTensor outTensor(&out);
 	outTensor.hostToDevice();
 
-	// Filter
+	// Filters (array of pointers)
 
-	int* d_filter;
-	long filter_mem_size = sizeof(int);
+	tensor_t<float> **d_filters;
+	long filter_mem_size = filters.size() * sizeof(tensor_t<float>*);
 
-	cudaMalloc((void **) &d_filter, filter_mem_size);
+	cudaMalloc((void ***) &d_filters, filter_mem_size);
 	cudaCheckError()
 
-	cudaMemcpy(d_filter, filterIdx, filter_mem_size, cudaMemcpyHostToDevice);
-	cudaCheckError()
+	for (int k = 0; k < filters.size(); k++) {
+		// Kernel
+		cudaTensor kernelTensor(&filters[k]);
+		kernelTensor.hostToDevice();
 
-		// Stride
+		tensor_t<float> *d_kernel = kernelTensor.devicePointer();
+		cudaMemcpy(&(d_filters[k]), &d_kernel,
+				sizeof(d_filters[k]), cudaMemcpyHostToDevice);
+		cudaCheckError()
+	}
 
+	// Stride
+
+	int iStride = (int) stride;
 	int* d_stride;
 	long stride_mem_size = sizeof(int);
 
 	cudaMalloc((void **) &d_stride, stride_mem_size);
 	cudaCheckError()
 
-	cudaMemcpy(d_stride, stride, stride_mem_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_stride, &iStride, stride_mem_size, cudaMemcpyHostToDevice);
 	cudaCheckError()
 
 		// Launch KERNEL
 
-	Logger::debug("CUDA kernel launch with (%d, %d, %d) blocks of (%d, %d, %d) threads",
-			blocksPerGrid.x , blocksPerGrid.y , blocksPerGrid.z,
-			threadsPerBlock.x , threadsPerBlock.y , threadsPerBlock.z);
+	Logger::debug(
+			"CUDA kernel launch with (%d, %d, %d) blocks of (%d, %d, %d) threads",
+			blocksPerGrid.x, blocksPerGrid.y, blocksPerGrid.z,
+			threadsPerBlock.x, threadsPerBlock.y, threadsPerBlock.z);
 
 	convolutionKernel<<<blocksPerGrid, threadsPerBlock>>>(
-			inTensor.devicePointer(), kernelTensor.devicePointer(), d_filter,
-			d_stride, outTensor.devicePointer());
+			inTensor.devicePointer(), d_filters, d_stride,
+			outTensor.devicePointer());
 	cudaCheckError()
 
 	cudaDeviceSynchronize();
@@ -139,12 +157,10 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 	outTensor.deviceToHost();
 
 	// Free device memory
-
 	inTensor.deviceFree();
-	kernelTensor.deviceFree();
 	outTensor.deviceFree();
 
-	cudaFree(d_filter);
+	cudaFree(d_filters);
 	cudaCheckError()
 
 	cudaFree(d_stride);
@@ -155,27 +171,10 @@ void cudaConvolution(tensor_t<float> *in, tensor_t<float> *kernel,
 
 		// Free host memory
 
-	// TODO
-	//print_tensor(*out);
-}
-
-void CudaConvLayer::activate(tensor_t<float>& in) {
-
-	this->in = in;
-
-	for (int filter = 0; filter < filters.size(); filter++) {
-		tensor_t<float> *kernel = &filters[filter];
-
-		tensor_t<float> *pIn = &in;
-		int *pFilter = &filter;
-		int iStride = (int) stride;
-		int *pStride = &iStride;
-		tensor_t<float> *pOut = &out;
-
-		cudaConvolution(pIn, kernel, pFilter, pStride, pOut);
+		// TODO
+		print_tensor(out);
 
 		// TODO
-		//exit (EXIT_SUCCESS);
-	}
+	exit (EXIT_SUCCESS);
 }
 
