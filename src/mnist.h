@@ -4,6 +4,12 @@
 
 using namespace std;
 
+#pragma pack(push, 1)
+struct RGB {
+	uint8_t r, g, b;
+};
+#pragma pack(pop)
+
 uint8_t* read_file(const char* szFile) {
 	ifstream file(szFile, ios::binary | ios::ate);
 	streamsize size = file.tellg();
@@ -71,7 +77,10 @@ float fullTest(vector<layer_t*>& master) {
 
 	case_t &sample = cases.at(1);
 
-	forward(master, sample.data);
+	NeuralNetwork neuralNetwork (master);
+
+	neuralNetwork.test(sample.data);
+
 	tensor_t<float> out = master.back()->out - sample.out;
 
 	Logger::debug("Sample: ");
@@ -89,7 +98,7 @@ float fullTest(vector<layer_t*>& master) {
 
 	for (case_t sample : cases) {
 
-		forward(master, sample.data);
+		neuralNetwork.test(sample.data);
 
 		for (int i = 0; i < classes; i++) {
 			float expected = sample.out.get(i, 0, 0);
@@ -110,7 +119,9 @@ float fullTest(vector<layer_t*>& master) {
 int singleTest(vector<layer_t*> master) {
 	uint8_t * data = read_file("data/test.ppm");
 
-	Logger::info("Single test \n");
+	Logger::info("Single test");
+
+	NeuralNetwork neuralNetwork (master);
 
 	int digit = -1;
 
@@ -131,7 +142,7 @@ int singleTest(vector<layer_t*> master) {
 			}
 		}
 
-		forward(master, image);
+		neuralNetwork.test(image);
 		tensor_t<float>& out = master.back()->out;
 
 		float maxProbability = 0.0;

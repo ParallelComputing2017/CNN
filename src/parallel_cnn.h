@@ -15,11 +15,14 @@
 
 using namespace std;
 
-
 vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 		vector<layer_t*> layers) {
+	int logIterStep = (batchEnd - batchStart) / 5;
 
-	Logger::info("Start training");
+	Logger::info("Start training [%d, %d] log->%d", batchStart, batchEnd,
+			logIterStep);
+
+	NeuralNetwork neuralNetwork(layers);
 
 	float amse = 0;
 	int ic = 0;
@@ -28,12 +31,12 @@ vector<layer_t*> training(vector<case_t> cases, int batchStart, int batchEnd,
 
 		for (int i = batchStart; i < batchEnd; i++) {
 			case_t& t = cases.at(i);
-			float xerr = train(layers, t.data, t.out);
+			float xerr = neuralNetwork.train(t.data, t.out);
 			amse += xerr;
 
 			ic++;
 
-			if (i % 50 == 0) {
+			if (i % logIterStep == 0) {
 				Logger::info("epoch: %lu  iter: %i  err: %f", ep, i, amse / ic);
 			}
 		}
@@ -254,7 +257,7 @@ int posix(int numThreads) {
 
 	master = joinSlaves(master, slaves);
 
-// TODO remove
+	// TODO remove
 	printf("*** END OF TRAINING *** \n");
 
 	return singleTest(master);

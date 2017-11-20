@@ -18,58 +18,64 @@
 
 using namespace std;
 
-#pragma pack(push, 1)
-struct RGB {
-	uint8_t r, g, b;
+class NeuralNetwork {
+
+private:
+	vector<layer_t*> layers;
+
+	void forward(tensor_t<float>& data) {
+		for (int i = 0; i < layers.size(); i++) {
+			layer_t* layer = layers[i];
+			if (i == 0) {
+				layer->activate(data);
+			} else {
+				layer->activate(layers[i - 1]->out);
+			}
+		}
+	}
+
+public:
+
+	NeuralNetwork(vector<layer_t*>& layers) :
+			layers(layers) {
+	}
+
+	void test(tensor_t<float>& data) {
+		forward(data);
+	}
+
+	float train(tensor_t<float>& data, tensor_t<float>& expected) {
+
+		forward(data);
+
+		tensor_t<float> grads = layers.back()->out - expected;
+
+		for (int i = layers.size() - 1; i >= 0; i--) {
+			layer_t* layer = layers[i];
+			if (i == layers.size() - 1) {
+				layer->calc_grads(grads);
+			} else {
+				layer->calc_grads(layers[i + 1]->grads_in);
+			}
+		}
+
+		for (int i = 0; i < layers.size(); i++) {
+			layer_t* layer = layers[i];
+			layer->fix_weights();
+		}
+
+		float err = 0;
+		int gradsSize = grads.getSize().x * grads.getSize().y
+				* grads.getSize().z;
+
+		for (int i = 0; i < gradsSize; i++) {
+			float f = expected.data[i];
+			if (f > 0.5)
+				err += abs(grads.data[i]);
+		}
+		return err * 100;
+	}
 };
-#pragma pack(pop)
-
-void forward(vector<layer_t*>& layers, tensor_t<float>& data) {
-	for (int i = 0; i < layers.size(); i++) {
-		layer_t* layer = layers[i];
-		if (i == 0){
-			//activate(layers[i], data);
-			layer->activate(data);
-		}else{
-			//activate(layers[i], layers[i - 1]->out);
-			layer->activate(layers[i - 1]->out);
-		}
-	}
-}
-
-float train(vector<layer_t*>& layers, tensor_t<float>& data,
-		tensor_t<float>& expected) {
-
-	forward(layers, data);
-
-	tensor_t<float> grads = layers.back()->out - expected;
-
-	for (int i = layers.size() - 1; i >= 0; i--) {
-		layer_t* layer = layers[i];
-		if (i == layers.size() - 1){
-
-		layer->calc_grads(grads);
-		}
-		else{
-			layer->calc_grads(layers[i + 1]->grads_in);
-		}
-	}
-
-	for (int i = 0; i < layers.size(); i++) {
-		layer_t* layer = layers[i];
-		layer->fix_weights();
-	}
-
-	float err = 0;
-	for (int i = 0;
-			i < grads.getSize().x * grads.getSize().y * grads.getSize().z;
-			i++) {
-		float f = expected.data[i];
-		if (f > 0.5)
-			err += abs(grads.data[i]);
-	}
-	return err * 100;
-}
 
 /**
  * Get an example layers.
@@ -138,4 +144,3 @@ vector<layer_t*> getExampleLayers2(tdsize inputSize) {
 
 	return layers;
 }
-
