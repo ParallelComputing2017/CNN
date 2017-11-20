@@ -1,5 +1,6 @@
 #pragma once
 #include "layer_t.h"
+#include "limits"
 
 #pragma pack(push, 1)
 class pool_layer_t: public layer_t {
@@ -75,7 +76,7 @@ public:
 				for (int z = 0; z < out.getSize().z; z++) {
 					point_t mapped = map_to_input( { (uint16_t) x, (uint16_t) y,
 							0 }, 0);
-					float mval = -FLT_MAX;
+					float mval = std::numeric_limits<float>::min();
 					for (int i = 0; i < extend_filter; i++)
 						for (int j = 0; j < extend_filter; j++) {
 							float v = in(mapped.x + i, mapped.y + j, z);

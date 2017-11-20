@@ -8,7 +8,11 @@
 #include <algorithm>
 
 #include "byteswap.h"
-#include "cnn.h"
+
+#include "relu_layer_t.h"
+#include "pool_layer_t.h"
+#include "fc_layer.h"
+#include "dropout_layer_t.h"
 
 #include "CUDA/cudaConvLayer.h"
 
@@ -41,14 +45,19 @@ float train(vector<layer_t*>& layers, tensor_t<float>& data,
 	tensor_t<float> grads = layers.back()->out - expected;
 
 	for (int i = layers.size() - 1; i >= 0; i--) {
-		if (i == layers.size() - 1)
-			calc_grads(layers[i], grads);
-		else
-			calc_grads(layers[i], layers[i + 1]->grads_in);
+		layer_t* layer = layers[i];
+		if (i == layers.size() - 1){
+
+		layer->calc_grads(grads);
+		}
+		else{
+			layer->calc_grads(layers[i + 1]->grads_in);
+		}
 	}
 
 	for (int i = 0; i < layers.size(); i++) {
-		fix_weights(layers[i]);
+		layer_t* layer = layers[i];
+		layer->fix_weights();
 	}
 
 	float err = 0;
