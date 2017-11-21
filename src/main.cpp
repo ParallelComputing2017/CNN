@@ -19,7 +19,6 @@ using namespace boost::timer;
 
 #include "parallel_cnn.h"
 
-
 int main(int argc, char *argv[]) {
 
 	bool fullTestRun = true;
@@ -66,8 +65,7 @@ int main(int argc, char *argv[]) {
 		timer.stop();
 	}
 
-	Logger::info("Mode: %s,  time: %s", mode.c_str(),
-			timer.format(3, "%ws").c_str());
+	Logger::info("Training time: %s", timer.format(3, "%ws").c_str());
 
 	// Testing
 	if (fullTestRun) {
@@ -78,8 +76,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	timer.start();
-	singleTest(layers);
-	Logger::info("Single test time: %s", timer.format(3, "%ws").c_str());
+	int digit = singleTest(layers);
+	Logger::info("Single test. Digit: %d,  time: %s", digit,
+			timer.format(3, "%ws").c_str());
 	timer.stop();
 
 	return 0;

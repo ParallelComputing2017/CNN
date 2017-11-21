@@ -153,7 +153,7 @@ int singleTest(vector<layer_t*> master) {
 				digit = i;
 				maxProbability = probability;
 			}
-			printf("[%i] %.3f    ", i, probability);
+			printf("[%i] %.3f  ", i, probability);
 		}
 		printf("\n");
 
