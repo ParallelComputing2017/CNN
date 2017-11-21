@@ -19,10 +19,10 @@ using namespace boost::timer;
 
 #include "parallel_cnn.h"
 
-void printLog(string mode, cpu_timer timer, int result);
 
 int main(int argc, char *argv[]) {
 
+	bool fullTestRun = true;
 	int threads = 3;
 	string self(argv[0]);
 	string mode = "cuda";
@@ -41,48 +41,48 @@ int main(int argc, char *argv[]) {
 
 	bool all = (mode.compare("all") == 0);
 
+	ParallelCNN cnn;
+	vector<layer_t*> layers;
+
 	if (mode.compare("posix") == 0 || all) {
-
 		timer.start();
-		int digit = posix(threads);
+		layers = cnn.posix(threads);
 		timer.stop();
-
-		printLog("Posix", timer, digit);
 	}
 	if (mode.compare("openmp") == 0 || all) {
-
 		timer.start();
-		int digit = openMP(threads);
+		layers = cnn.openMP(threads);
 		timer.stop();
-
-		printLog("OpenMP", timer, digit);
-
 	}
 	if (mode.compare("cuda") == 0 || all) {
-
 		timer.start();
-		int digit = cuda(threads);
+		layers = cnn.cuda(threads);
 		timer.stop();
-
-		printLog("CUDA", timer, digit);
-
+		fullTestRun = false;
 	}
 	if (mode.compare("sequential") == 0) {
-
 		timer.start();
-		int digit = sequential();
+		layers = cnn.sequential();
 		timer.stop();
-
-		printLog("Single", timer, digit);
 	}
+
+	Logger::info("Mode: %s,  time: %s", mode.c_str(),
+			timer.format(3, "%ws").c_str());
+
+	// Testing
+	if (fullTestRun) {
+		timer.start();
+		fullTest(layers);
+		timer.stop();
+		Logger::info("Full test time: %s", timer.format(3, "%ws").c_str());
+	}
+
+	timer.start();
+	singleTest(layers);
+	Logger::info("Single test time: %s", timer.format(3, "%ws").c_str());
+	timer.stop();
 
 	return 0;
 
-}
-
-void printLog(string mode, cpu_timer timer, int result) {
-
-	printf("%s\t time: %s\t result: %i \n", mode.c_str(),
-			timer.format(3, "%ws").c_str(), result);
 }
 

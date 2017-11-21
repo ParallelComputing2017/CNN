@@ -73,7 +73,7 @@ vector<case_t> readTestCases() {
 float fullTest(vector<layer_t*>& master) {
 	vector<case_t> cases = readTestCases();
 
-	Logger::info("Full test. Test cases: %lu \n", cases.size());
+	Logger::info("Full test. Test cases: %lu", cases.size());
 
 	case_t &sample = cases.at(1);
 
@@ -111,7 +111,7 @@ float fullTest(vector<layer_t*>& master) {
 	}
 	float error = accumulativeError / cases.size();
 
-	Logger::info("Full test. Error: %f \n", error);
+	Logger::info("Full test. Error: %f", error);
 
 	return error;
 }
