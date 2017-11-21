@@ -200,6 +200,24 @@ public:
 		return layers;
 	}
 
+	/*
+	 * Run in a Nvidia GPU with OpenCL interface
+	 */
+	vector<layer_t*> opencl() {
+
+		vector<case_t> cases = read_training_cases();
+
+		vector<layer_t*> layers = getExampleOpenCL(cases[0].data.getSize());
+
+		int casesSize = cases.size() - 59750;
+
+		printf("Training cases: %i \n", casesSize);
+
+		layers = training(cases, 0, casesSize, layers);
+
+		return layers;
+	}
+
 	struct thread_data {
 		int thread_id;
 		int numThreads;

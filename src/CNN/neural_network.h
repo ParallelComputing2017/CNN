@@ -16,6 +16,8 @@
 
 #include "CUDA/cudaConvLayer.h"
 
+#include "OpenCL/openCLConvLayer.h"
+
 using namespace std;
 
 class NeuralNetwork {
@@ -105,6 +107,26 @@ vector<layer_t*> getExampleCuda(tdsize inputSize) {
 	vector<layer_t*> layers;
 
 	layer_t * convLayer = new CudaConvLayer(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
+	relu_layer_t * layer2 = new relu_layer_t(convLayer->out.getSize());
+	pool_layer_t * layer3 = new pool_layer_t(2, 2, layer2->out.getSize()); // 24 * 24 * 8 -> 12 * 12 * 8
+	layer_t * fcLayer = new fc_layer_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10
+
+	layers.push_back((layer_t*) convLayer);
+	layers.push_back((layer_t*) layer2);
+	layers.push_back((layer_t*) layer3);
+	layers.push_back((layer_t*) fcLayer);
+
+	return layers;
+}
+
+/**
+ * Get an example layers.
+ */
+vector<layer_t*> getExampleOpenCL(tdsize inputSize) {
+
+	vector<layer_t*> layers;
+
+	layer_t * convLayer = new OpenCLConvLayer(1, 5, 8, inputSize); // 28 * 28 * 1 -> 24 * 24 * 8
 	relu_layer_t * layer2 = new relu_layer_t(convLayer->out.getSize());
 	pool_layer_t * layer3 = new pool_layer_t(2, 2, layer2->out.getSize()); // 24 * 24 * 8 -> 12 * 12 * 8
 	layer_t * fcLayer = new fc_layer_t(layer3->out.getSize(), 10);// 4 * 4 * 16 -> 10

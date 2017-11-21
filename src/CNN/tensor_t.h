@@ -2,6 +2,7 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <cstring>
 
 #include "point_t.h"
 #include "Common/logger.h"

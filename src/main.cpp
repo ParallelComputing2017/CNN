@@ -24,11 +24,11 @@ int main(int argc, char *argv[]) {
 	bool fullTestRun = true;
 	int threads = 3;
 	string self(argv[0]);
-	string mode = "cuda";
+	string mode = "opencl";
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: <mode> <num_threads>\n");
-		printf("\tModes: all, posix, openmp, sequential, cuda \n");
+		printf("\tModes: all, posix, openmp, sequential, cuda, opencl \n");
 	} else {
 		mode = argv[1];
 		threads = atoi(argv[2]);
@@ -43,6 +43,11 @@ int main(int argc, char *argv[]) {
 	ParallelCNN cnn;
 	vector<layer_t*> layers;
 
+	if (mode.compare("sequential") == 0) {
+			timer.start();
+			layers = cnn.sequential();
+			timer.stop();
+		}
 	if (mode.compare("posix") == 0 || all) {
 		timer.start();
 		layers = cnn.posix(threads);
@@ -59,9 +64,9 @@ int main(int argc, char *argv[]) {
 		timer.stop();
 		fullTestRun = false;
 	}
-	if (mode.compare("sequential") == 0) {
+	if (mode.compare("opencl") == 0|| all) {
 		timer.start();
-		layers = cnn.sequential();
+		layers = cnn.opencl();
 		timer.stop();
 	}
 

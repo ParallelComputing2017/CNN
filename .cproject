@@ -44,6 +44,7 @@
 									<listOptionValue builtIn="false" value="gomp"/>
 									<listOptionValue builtIn="false" value="boost_system"/>
 									<listOptionValue builtIn="false" value="boost_timer"/>
+									<listOptionValue builtIn="false" value="OpenCL"/>
 								</option>
 								<inputType id="nvcc.linker.input.158863382" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -113,6 +114,7 @@
 									<listOptionValue builtIn="false" value="gomp"/>
 									<listOptionValue builtIn="false" value="boost_system"/>
 									<listOptionValue builtIn="false" value="boost_timer"/>
+									<listOptionValue builtIn="false" value="OpenCL"/>
 								</option>
 								<inputType id="nvcc.linker.input.1006402595" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
