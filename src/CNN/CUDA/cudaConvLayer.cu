@@ -78,8 +78,8 @@ void CudaConvLayer::activate(tensor_t<float>& in) {
 	int yThreads = out.size.y;
 	int zThreads = filters.size();
 
-	int xblocks = 7;
-	int yblocks = 4;
+	int xblocks = 5;
+	int yblocks = 2;
 	int zblocks = 1;
 
 	threadCalculator(out.size.x, deviceProp, xblocks, xThreads);

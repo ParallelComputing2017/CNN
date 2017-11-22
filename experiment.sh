@@ -6,7 +6,7 @@ mode="sequential"
 cnn="./Release/CNN"
 
 # Sequential version
-#eval "$cnn $mode $threads"
+eval "$cnn $mode $threads"
 
 # Parallel version
 cpu_modes=("pthreads" "openmp")

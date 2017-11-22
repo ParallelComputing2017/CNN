@@ -265,7 +265,8 @@ public:
 		// warm the model
 		master = slaves[0];
 
-		master = joinSlaves(master, slaves);
+		// TODO
+		//master = joinSlaves(master, slaves);
 
 		return master;
 
