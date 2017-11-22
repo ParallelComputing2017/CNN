@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 
 	if (argc != 3) { // argc should be 3 for correct execution
 		printf("Usage: <mode> <num_threads>\n");
-		printf("\tModes: all, posix, openmp, sequential, cuda, opencl \n");
+		printf("\tModes: pthreads, openmp, sequential, cuda, opencl \n");
 	} else {
 		mode = argv[1];
 		threads = atoi(argv[2]);
@@ -38,33 +38,31 @@ int main(int argc, char *argv[]) {
 
 	printf("Running mode: %s-%i \n", mode.c_str(), threads);
 
-	bool all = (mode.compare("all") == 0);
-
 	ParallelCNN cnn;
 	vector<layer_t*> layers;
 
 	if (mode.compare("sequential") == 0) {
-			timer.start();
-			layers = cnn.sequential();
-			timer.stop();
-		}
-	if (mode.compare("posix") == 0 || all) {
+		timer.start();
+		layers = cnn.sequential();
+		timer.stop();
+	}
+	if (mode.compare("pthreads") == 0) {
 		timer.start();
 		layers = cnn.posix(threads);
 		timer.stop();
 	}
-	if (mode.compare("openmp") == 0 || all) {
+	if (mode.compare("openmp") == 0) {
 		timer.start();
 		layers = cnn.openMP(threads);
 		timer.stop();
 	}
-	if (mode.compare("cuda") == 0 || all) {
+	if (mode.compare("cuda") == 0) {
 		timer.start();
 		layers = cnn.cuda(threads);
 		timer.stop();
 		fullTestRun = false;
 	}
-	if (mode.compare("opencl") == 0|| all) {
+	if (mode.compare("opencl") == 0) {
 		timer.start();
 		layers = cnn.opencl();
 		timer.stop();

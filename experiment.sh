@@ -1,18 +1,36 @@
 #!/bin/bash
 
+
 threads=0
-mode="single"
+mode="sequential"
 cnn="./Release/CNN"
 
 # Sequential version
-eval "$cnn $mode $threads"
+#eval "$cnn $mode $threads"
 
 # Parallel version
-mode="all"
+cpu_modes=("pthreads" "openmp")
 
-for t in {1..8}
+for mode in ${cpu_modes[*]}
 do
-	threads=$t
-	eval "$cnn $mode $threads"
-	printf "\n"
+	for t in {1..8}
+	do
+		threads=$t
+		#echo $mode
+		eval "$cnn $mode $threads"
+		printf "\n"
+	done
+done
+
+gpu_modes=("cuda" "opencl")
+
+for mode in ${gpu_modes[*]}
+do
+	for t in {1..1}
+	do
+		threads=$t
+		#echo $mode
+		eval "$cnn $mode $threads"
+		printf "\n"
+	done
 done
