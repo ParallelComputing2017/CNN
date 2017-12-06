@@ -26,11 +26,8 @@ gpu_modes=("cuda" "opencl")
 
 for mode in ${gpu_modes[*]}
 do
-	for t in {1..1}
-	do
-		threads=$t
-		#echo $mode
-		eval "$cnn $mode $threads"
-		printf "\n"
-	done
+	threads=1
+	#echo $mode
+	eval "$cnn $mode $threads"
+	printf "\n"
 done
